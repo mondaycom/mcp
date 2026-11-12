@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.78.8
+
+### `get_board_info` v2 flow behind the `mcp-get-board-info-v2` feature flag
+
+- With the flag on, `get_board_info` makes a single board request (API `2027-04`) and reads subitem columns from `subitem_columns`, instead of a second request to the subitems board.
+- View-name filters are resolved from one full views fetch, instead of an id/name index query followed by a filtered fetch.
+- The tool input and output are unchanged. The flag is off by default, including for hosts that pass no `flagChecker`, so the existing flow is used until it is turned on.
+
 ## 5.78.7
 
 ### `get_board_activity` sends the `activity_logs` query in its 2026-10 shape

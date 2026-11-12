@@ -220,7 +220,9 @@ export type ActivateWorkflowResult = {
 
 /** Dimension to group event counts by */
 export enum ActivityGroupBy {
+  /** Group counts by board ID */
   Board = 'BOARD',
+  /** Group counts by user ID */
   User = 'USER'
 }
 
@@ -428,9 +430,13 @@ export type AgentActivityRun = {
 
 /** The current or final status of an agent activity run. */
 export enum AgentActivityRunStatus {
+  /** The run was cancelled. */
   Cancelled = 'CANCELLED',
+  /** The run failed. */
   Failed = 'FAILED',
+  /** The run is currently in progress. */
   Running = 'RUNNING',
+  /** The run completed successfully. */
   Success = 'SUCCESS'
 }
 
@@ -454,7 +460,11 @@ export type AgentActivityStep = {
 
 /** The level of access a user or team has for an agent. */
 export enum AgentMembershipRole {
+  /** Can use the agent and edit its configuration, but cannot share, delete, or change the agent's state. */
+  Editor = 'EDITOR',
+  /** Member-level access to the agent. */
   Member = 'MEMBER',
+  /** Owner-level access to the agent. */
   Owner = 'OWNER'
 }
 
@@ -474,8 +484,29 @@ export type AgentSubscriberEntity = Team | User;
 
 /** The type of entity subscribed to an agent. */
 export enum AgentSubscriberKind {
+  /** A team. */
   Team = 'TEAM',
+  /** A user. */
   User = 'USER'
+}
+
+/** The agent user mapped to an API app in the account, with its activation status. */
+export type AgentUserMapping = {
+  __typename?: 'AgentUserMapping';
+  /** The activation status of the mapped agent user. */
+  status?: Maybe<AgentUserStatus>;
+  /** The mapped agent user. */
+  user: User;
+};
+
+/** The activation status of an agent user. */
+export enum AgentUserStatus {
+  /** The user is enabled and has accepted their invitation. */
+  Active = 'ACTIVE',
+  /** The user is deactivated. */
+  Inactive = 'INACTIVE',
+  /** The user is enabled but has not accepted their invitation yet. */
+  Pending = 'PENDING'
 }
 
 export type AggregateBasicAggregationResult = {
@@ -484,7 +515,9 @@ export type AggregateBasicAggregationResult = {
 };
 
 export enum AggregateFromElementType {
+  /** A data view to select from */
   DataView = 'DATA_VIEW',
+  /** A single table to select from */
   Table = 'TABLE'
 }
 
@@ -533,15 +566,25 @@ export type AggregateHistoryFilterGroupInput = {
 
 /** Comparison operators for filtering items in aggregate queries. */
 export enum AggregateHistoryFilterOperator {
+  /** Match any of the specified values (OR). */
   AnyOf = 'ANY_OF',
+  /** Text ends with the specified substring. */
   EndsWith = 'ENDS_WITH',
+  /** Value is greater than the specified value. */
   GreaterThan = 'GREATER_THAN',
+  /** Value is greater than or equal to the specified value. */
   GreaterThanOrEquals = 'GREATER_THAN_OR_EQUALS',
+  /** Value is empty or null. */
   IsEmpty = 'IS_EMPTY',
+  /** Value is not empty or null. */
   IsNotEmpty = 'IS_NOT_EMPTY',
+  /** Value is less than the specified value. */
   LowerThan = 'LOWER_THAN',
+  /** Value is less than or equal to the specified value. */
   LowerThanOrEqual = 'LOWER_THAN_OR_EQUAL',
+  /** Match none of the specified values. */
   NotAnyOf = 'NOT_ANY_OF',
+  /** Text starts with the specified substring. */
   StartsWith = 'STARTS_WITH'
 }
 
@@ -559,7 +602,9 @@ export type AggregateHistoryFilterRuleInput = {
 
 /** The source type for the aggregate history query. */
 export enum AggregateHistoryFromElement {
+  /** Query historical snapshots of board/table data at specific dates. */
   Table = 'TABLE',
+  /** Query historical snapshots across multiple boards via unified sub-queries. */
   Union = 'UNION'
 }
 
@@ -575,27 +620,49 @@ export type AggregateHistoryFromInput = {
 
 /** The aggregation function to apply. */
 export enum AggregateHistoryFunction {
+  /** Calculate the average of numeric values. */
   Average = 'AVERAGE',
+  /** Get the color value. */
   Color = 'COLOR',
+  /** Count all values. */
   Count = 'COUNT',
+  /** Count distinct values. */
   CountDistinct = 'COUNT_DISTINCT',
+  /** Count items. */
   CountItems = 'COUNT_ITEMS',
+  /** Truncate a date or datetime value to the day. */
   DateTruncDay = 'DATE_TRUNC_DAY',
+  /** Truncate a date or datetime value to the month. */
   DateTruncMonth = 'DATE_TRUNC_MONTH',
+  /** Truncate a date or datetime value to the quarter. */
   DateTruncQuarter = 'DATE_TRUNC_QUARTER',
+  /** Truncate a date or datetime value to the week. */
   DateTruncWeek = 'DATE_TRUNC_WEEK',
+  /** Truncate a date or datetime value to the year. */
   DateTruncYear = 'DATE_TRUNC_YEAR',
+  /** Get the first value. */
   First = 'FIRST',
+  /** Get the ID. */
   Id = 'ID',
+  /** Check if done/completed. */
   IsDone = 'IS_DONE',
+  /** Get the label value. */
   Label = 'LABEL',
+  /** Get the length of a value. */
   Length = 'LENGTH',
+  /** Convert to lowercase. */
   Lower = 'LOWER',
+  /** Get the maximum value. */
   Max = 'MAX',
+  /** Calculate the median. */
   Median = 'MEDIAN',
+  /** Get the minimum value. */
   Min = 'MIN',
+  /** Calculate the sum of numeric values. */
   Sum = 'SUM',
+  /** Trim whitespace from value. */
   Trim = 'TRIM',
+  /** Convert to uppercase. */
   Upper = 'UPPER'
 }
 
@@ -660,7 +727,9 @@ export type AggregateHistoryQueryInput = {
 
 /** Logical operators for combining filter rules. */
 export enum AggregateHistoryQueryOperator {
+  /** All rules must match (AND logic). */
   And = 'AND',
+  /** Any rule can match (OR logic). */
   Or = 'OR'
 }
 
@@ -717,18 +786,23 @@ export type AggregateHistorySelectInput = {
 
 /** The type of element to select in the aggregation. */
 export enum AggregateHistorySelectKind {
+  /** Select a column value directly. */
   Column = 'COLUMN',
+  /** Apply an aggregation function to column(s). */
   Function = 'FUNCTION'
 }
 
 /** Sort direction for ordering results. */
 export enum AggregateHistorySortDirection {
+  /** Sort in ascending order (A-Z, 0-9). */
   Asc = 'ASC',
+  /** Sort in descending order (Z-A, 9-0). */
   Desc = 'DESC'
 }
 
 /** Table source type for union sub-queries. */
 export enum AggregateHistoryTableFromElement {
+  /** Single board table source. */
   Table = 'TABLE'
 }
 
@@ -805,7 +879,9 @@ export type AggregateSelectElementInput = {
 };
 
 export enum AggregateSelectElementType {
+  /** A column to select */
   Column = 'COLUMN',
+  /** A function to select */
   Function = 'FUNCTION'
 }
 
@@ -817,45 +893,85 @@ export type AggregateSelectFunctionInput = {
 
 /** Function to select. Required if type is FUNCTION */
 export enum AggregateSelectFunctionName {
+  /** Average the values of the items */
   Average = 'AVERAGE',
+  /** Check if the value is between two values */
   Between = 'BETWEEN',
+  /** Conditional case statement */
   Case = 'CASE',
+  /** Extract color value */
   Color = 'COLOR',
+  /** Count the number of values */
   Count = 'COUNT',
+  /** Count the number of distinct values of the items */
   CountDistinct = 'COUNT_DISTINCT',
+  /** Count the number of items */
   CountItems = 'COUNT_ITEMS',
+  /** Count the number of keys in the object */
   CountKeys = 'COUNT_KEYS',
+  /** Count the number of subitems */
   CountSubitems = 'COUNT_SUBITEMS',
+  /** Extract date component */
   Date = 'DATE',
+  /** Truncate date to day precision */
   DateTruncDay = 'DATE_TRUNC_DAY',
+  /** Truncate date to month precision */
   DateTruncMonth = 'DATE_TRUNC_MONTH',
+  /** Truncate date to quarter precision */
   DateTruncQuarter = 'DATE_TRUNC_QUARTER',
+  /** Truncate date to week precision */
   DateTruncWeek = 'DATE_TRUNC_WEEK',
+  /** Truncate date to year precision */
   DateTruncYear = 'DATE_TRUNC_YEAR',
+  /** Get the running duration of the items */
   DurationRunning = 'DURATION_RUNNING',
+  /** Get end date from date range */
   EndDate = 'END_DATE',
+  /** Check if values are equal */
   Equals = 'EQUALS',
+  /** Get the first value */
   First = 'FIRST',
+  /** Flatten nested values */
   Flatten = 'FLATTEN',
+  /** Extract hour from datetime */
   Hour = 'HOUR',
+  /** Extract ID value */
   Id = 'ID',
+  /** Check if status is done */
   IsDone = 'IS_DONE',
+  /** Extract label text */
   Label = 'LABEL',
+  /** Get the leftmost characters */
   Left = 'LEFT',
+  /** Get the length of the value */
   Length = 'LENGTH',
+  /** Convert text to lowercase */
   Lower = 'LOWER',
+  /** Get the maximum value of the items */
   Max = 'MAX',
+  /** Get the median of the values of the items */
   Median = 'MEDIAN',
+  /** Get the minimum value of the items */
   Min = 'MIN',
+  /** Get the minimum and maximum values of the items */
   MinMax = 'MIN_MAX',
+  /** No function applied */
   None = 'NONE',
+  /** Extract order value */
   Order = 'ORDER',
+  /** Extract person information */
   Person = 'PERSON',
+  /** Extract phone country short name */
   PhoneCountryShortName = 'PHONE_COUNTRY_SHORT_NAME',
+  /** Get raw value without formatting */
   Raw = 'RAW',
+  /** Get start date from date range */
   StartDate = 'START_DATE',
+  /** Sum the values of the items */
   Sum = 'SUM',
+  /** Remove whitespace from text */
   Trim = 'TRIM',
+  /** Convert text to uppercase */
   Upper = 'UPPER'
 }
 
@@ -872,16 +988,27 @@ export type AiActionResponse = {
 
 /** Type of entity to extract from text. */
 export enum AiColumnEntity {
+  /** Extract company names. */
   CompanyName = 'company_name',
+  /** Extract a custom entity defined by custom_instructions. */
   Custom = 'custom',
+  /** Extract dates. */
   Date = 'date',
+  /** Extract domain names. */
   DomainName = 'domain_name',
+  /** Extract email addresses. */
   EmailAddress = 'email_address',
+  /** Extract first names. */
   FirstName = 'first_name',
+  /** Extract last names. */
   LastName = 'last_name',
+  /** Extract phone numbers. */
   PhoneNumber = 'phone_number',
+  /** Extract times. */
   Time = 'time',
+  /** Extract URLs. */
   Url = 'url',
+  /** Extract years. */
   Year = 'year'
 }
 
@@ -893,43 +1020,73 @@ export type AiColumnExtraSettingsInput = {
 
 /** Desired output length relative to the input text. */
 export enum AiColumnImproverLength {
+  /** Make the output longer than the input. */
   Longer = 'longer',
+  /** Keep approximately the same length as input. */
   Same = 'same',
+  /** Make the output shorter than the input. */
   Shorter = 'shorter'
 }
 
 /** Target language for translation. */
 export enum AiColumnLanguage {
+  /** Arabic. */
   Arabic = 'arabic',
+  /** Bengali. */
   Bengali = 'bengali',
+  /** Chinese. */
   Chinese = 'chinese',
+  /** Danish. */
   Danish = 'danish',
+  /** Dutch. */
   Dutch = 'dutch',
+  /** English. */
   English = 'english',
+  /** French. */
   French = 'french',
+  /** German. */
   German = 'german',
+  /** Hebrew. */
   Hebrew = 'hebrew',
+  /** Hindi. */
   Hindi = 'hindi',
+  /** Indonesian. */
   Indonesian = 'indonesian',
+  /** Italian. */
   Italian = 'italian',
+  /** Japanese. */
   Japanese = 'japanese',
+  /** Korean. */
   Korean = 'korean',
+  /** Norwegian. */
   Norwegian = 'norwegian',
+  /** Polish. */
   Polish = 'polish',
+  /** Portuguese. */
   Portuguese = 'portuguese',
+  /** Russian. */
   Russian = 'russian',
+  /** Spanish. */
   Spanish = 'spanish',
+  /** Swedish. */
   Swedish = 'swedish',
+  /** Thai. */
   Thai = 'thai',
+  /** Turkish. */
   Turkish = 'turkish',
+  /** Vietnamese. */
   Vietnamese = 'vietnamese'
 }
 
 /** Approximate desired length of generated text. */
 export enum AiColumnOutputLength {
+  /** Output a brief, concise response. */
   Brief = 'brief',
+  /** Output a detailed, in-depth response. */
   InDepth = 'in_depth',
+  /** Output approximately one paragraph. */
   Paragraph = 'paragraph',
+  /** Output approximately one sentence. */
   Sentence = 'sentence'
 }
 
@@ -943,8 +1100,11 @@ export type AiColumnPersonGroupInput = {
 
 /** Level of text refinement to apply. */
 export enum AiColumnRefinementLevel {
+  /** Substantially rewrite with creative freedom. */
   HighCreativity = 'high_creativity',
+  /** Apply only minor corrections and improvements. */
   MinimalChanges = 'minimal_changes',
+  /** Restructure and improve while preserving intent. */
   ModerateChanges = 'moderate_changes'
 }
 
@@ -966,21 +1126,33 @@ export type AiColumnResult = {
 
 /** The data source for AI column processing. */
 export enum AiColumnSource {
+  /** Use a specific column value as the AI input source. */
   Column = 'column',
+  /** Use emails and activities associated with the item as the AI input source. */
   EmailsAndActivities = 'emails_and_activities',
+  /** Use the item name as the AI input source. */
   ItemName = 'item_name',
+  /** Use the item update thread as the AI input source. */
   Thread = 'thread'
 }
 
 /** Writing tone/style for AI text generation. */
 export enum AiColumnTone {
+  /** Relaxed, informal tone. */
   Casual = 'casual',
+  /** Assertive and authoritative tone. */
   Confident = 'confident',
+  /** Warm, understanding, and emotionally aware tone. */
   Empathic = 'empathic',
+  /** Approachable, personable tone. */
   Friendly = 'friendly',
+  /** Conversational, everyday tone. */
   Natural = 'natural',
+  /** Formal, business-appropriate tone. */
   Professional = 'professional',
+  /** Persuasive, marketing-oriented tone. */
   Promotional = 'promotional',
+  /** Preserve the same tone as the input text. */
   Same = 'same'
 }
 
@@ -999,8 +1171,11 @@ export type AiDocumentActionResponse = {
 
 /** Available AI model tiers. */
 export enum AiModel {
+  /** The Monday Fast model. */
   MondayFast = 'MONDAY_FAST',
+  /** The Monday Powerful model. */
   MondayPowerful = 'MONDAY_POWERFUL',
+  /** The Monday Standard model. */
   MondayStandard = 'MONDAY_STANDARD'
 }
 
@@ -1123,21 +1298,37 @@ export type AllocationUpdateInput = {
 
 /** Allowed MIME types for file uploads */
 export enum AllowedFileMime {
+  /** PDF document */
   ApplicationPdf = 'APPLICATION_PDF',
+  /** Excel spreadsheet */
   ApplicationXlsx = 'APPLICATION_XLSX',
+  /** AVIF image */
   ImageAvif = 'IMAGE_AVIF',
+  /** GIF image */
   ImageGif = 'IMAGE_GIF',
+  /** HEIC image (iPhone/mobile) */
   ImageHeic = 'IMAGE_HEIC',
+  /** JPEG image */
   ImageJpeg = 'IMAGE_JPEG',
+  /** PNG image */
   ImagePng = 'IMAGE_PNG',
+  /** SVG vector image */
   ImageSvg = 'IMAGE_SVG',
+  /** WebP image */
   ImageWebp = 'IMAGE_WEBP',
+  /** CSV spreadsheet */
   TextCsv = 'TEXT_CSV',
+  /** Markdown document */
   TextMarkdown = 'TEXT_MARKDOWN',
+  /** Plain text document */
   TextPlain = 'TEXT_PLAIN',
+  /** MP4 video */
   VideoMp4 = 'VIDEO_MP4',
+  /** Ogg video */
   VideoOgg = 'VIDEO_OGG',
+  /** QuickTime video */
   VideoQuicktime = 'VIDEO_QUICKTIME',
+  /** WebM video */
   VideoWebm = 'VIDEO_WEBM'
 }
 
@@ -1150,8 +1341,34 @@ export type ApiAppUserMapping = {
 
 /** The kind of API-app-backed user to create. */
 export enum ApiAppUserMappingKind {
+  /** An AI user acting on behalf of an API app. */
   AgentMember = 'AGENT_MEMBER',
+  /** A Vibe-backed user acting on behalf of an API app. */
   VibeUser = 'VIBE_USER'
+}
+
+/** The type of feedback about the monday API. */
+export enum ApiFeedbackKind {
+  /** Pick this when the API returned a wrong result or an unexpected error. */
+  Bug = 'bug',
+  /** Pick this when the documentation is missing, wrong or unclear. */
+  Docs = 'docs',
+  /** Pick this when the API has no way to do an action you need. */
+  FeatureRequest = 'feature_request',
+  /** Pick this for any other comment about the API. */
+  Feedback = 'feedback'
+}
+
+/** What you did next after you hit the problem. */
+export enum ApiFeedbackOutcome {
+  /** Pick this when you stopped and did not finish the task. */
+  GaveUp = 'gave_up',
+  /** Pick this for anything else. */
+  Other = 'other',
+  /** Pick this when the action was done in the monday UI instead, by you or the user, because the API could not do it. */
+  PerformedActionInUi = 'performed_action_in_ui',
+  /** Pick this when you reached the goal with other API calls. */
+  WorkedAroundWithOtherCalls = 'worked_around_with_other_calls'
 }
 
 /** An audit record for app actions */
@@ -1175,11 +1392,17 @@ export type AppAudit = {
 
 /** The type of app audit action */
 export enum AppAuditKind {
+  /** External guest access was disabled for an app */
   ExternalAccessDisabled = 'EXTERNAL_ACCESS_DISABLED',
+  /** External guest access was enabled for an app */
   ExternalAccessEnabled = 'EXTERNAL_ACCESS_ENABLED',
+  /** External access was killed by an admin */
   ExternalAccessKilledByAdmin = 'EXTERNAL_ACCESS_KILLED_BY_ADMIN',
+  /** An external user was invited to an app */
   ExternalUserInvited = 'EXTERNAL_USER_INVITED',
+  /** An external user was revoked from an app */
   ExternalUserRevoked = 'EXTERNAL_USER_REVOKED',
+  /** App was unpublished */
   Unpublish = 'UNPUBLISH'
 }
 
@@ -1228,7 +1451,9 @@ export type AppFeatureRelation = {
 
 /** The kind of the app feature relation. */
 export enum AppFeatureRelationKind {
+  /** Dependency relation between app features. */
   Dependency = 'DEPENDENCY',
+  /** Hosting relation between app features. */
   Hosting = 'HOSTING'
 }
 
@@ -1248,8 +1473,11 @@ export type AppFeatureReleaseInput = {
 
 /** The hosting type for the app feature release */
 export enum AppFeatureReleaseKind {
+  /** Client-side application deployed via monday.com CLI */
   ClientSideCode = 'CLIENT_SIDE_CODE',
+  /** Externally hosted application loaded via iframe */
   ExternalHosting = 'EXTERNAL_HOSTING',
+  /** Server-side application hosted on monday code infrastructure */
   ServerSideCode = 'SERVER_SIDE_CODE'
 }
 
@@ -1274,61 +1502,117 @@ export type AppFeatureType = {
 
 /** The type of the app feature. */
 export enum AppFeatureTypeE {
+  /** ACCOUNT_SETTINGS_VIEW */
   AccountSettingsView = 'ACCOUNT_SETTINGS_VIEW',
+  /** ADMIN_VIEW */
   AdminView = 'ADMIN_VIEW',
+  /** AI */
   Ai = 'AI',
+  /** AI_AGENT */
   AiAgent = 'AI_AGENT',
+  /** AI_AGENT_SKILL */
   AiAgentSkill = 'AI_AGENT_SKILL',
+  /** AI_BOARD_MAIN_MENU_HEADER */
   AiBoardMainMenuHeader = 'AI_BOARD_MAIN_MENU_HEADER',
+  /** AI_DOC_CONTEXTUAL_MENU */
   AiDocContextualMenu = 'AI_DOC_CONTEXTUAL_MENU',
+  /** AI_DOC_QUICK_START */
   AiDocQuickStart = 'AI_DOC_QUICK_START',
+  /** AI_DOC_SLASH_COMMAND */
   AiDocSlashCommand = 'AI_DOC_SLASH_COMMAND',
+  /** AI_DOC_TOP_BAR */
   AiDocTopBar = 'AI_DOC_TOP_BAR',
+  /** AI_EMAILS_AND_ACTIVITIES_HEADER_ACTIONS */
   AiEmailsAndActivitiesHeaderActions = 'AI_EMAILS_AND_ACTIVITIES_HEADER_ACTIONS',
+  /** AI_FORMULA */
   AiFormula = 'AI_FORMULA',
+  /** AI_IC_ASSISTANT_HELP_CENTER */
   AiIcAssistantHelpCenter = 'AI_IC_ASSISTANT_HELP_CENTER',
+  /** AI_ITEM_EMAILS_AND_ACTIVITIES_ACTIONS */
   AiItemEmailsAndActivitiesActions = 'AI_ITEM_EMAILS_AND_ACTIVITIES_ACTIONS',
+  /** AI_ITEM_UPDATE_ACTIONS */
   AiItemUpdateActions = 'AI_ITEM_UPDATE_ACTIONS',
+  /** AI_PLATFORM_AGENT */
   AiPlatformAgent = 'AI_PLATFORM_AGENT',
+  /** APP_WIZARD */
   AppWizard = 'APP_WIZARD',
+  /** BLOCK */
   Block = 'BLOCK',
+  /** BOARD_COLUMN_ACTION */
   BoardColumnAction = 'BOARD_COLUMN_ACTION',
+  /** BOARD_COLUMN_EXTENSION */
   BoardColumnExtension = 'BOARD_COLUMN_EXTENSION',
+  /** BOARD_HEADER_ACTION */
   BoardHeaderAction = 'BOARD_HEADER_ACTION',
+  /** BOARD_VIEW */
   BoardView = 'BOARD_VIEW',
+  /** COLUMN */
   Column = 'COLUMN',
+  /** COLUMN_TEMPLATE */
   ColumnTemplate = 'COLUMN_TEMPLATE',
+  /** CREDENTIALS */
   Credentials = 'CREDENTIALS',
+  /** DASHBOARD_WIDGET */
   DashboardWidget = 'DASHBOARD_WIDGET',
+  /** DATA_ENTITY */
   DataEntity = 'DATA_ENTITY',
+  /** DIALOG */
   Dialog = 'DIALOG',
+  /** DIGITAL_WORKER */
   DigitalWorker = 'DIGITAL_WORKER',
+  /** DOC_ACTIONS */
   DocActions = 'DOC_ACTIONS',
+  /** FIELD_TYPE */
   FieldType = 'FIELD_TYPE',
+  /** GROUP_MENU_ACTION */
   GroupMenuAction = 'GROUP_MENU_ACTION',
+  /** GROWTH_CONFIG */
   GrowthConfig = 'GROWTH_CONFIG',
+  /** INTEGRATION */
   Integration = 'INTEGRATION',
+  /** ITEM_BATCH_ACTION */
   ItemBatchAction = 'ITEM_BATCH_ACTION',
+  /** ITEM_MENU_ACTION */
   ItemMenuAction = 'ITEM_MENU_ACTION',
+  /** ITEM_VIEW */
   ItemView = 'ITEM_VIEW',
+  /** MCP_SERVER */
   McpServer = 'MCP_SERVER',
+  /** MODAL */
   Modal = 'MODAL',
+  /** NOTIFICATION_KIND */
   NotificationKind = 'NOTIFICATION_KIND',
+  /** NOTIFICATION_SETTING_KIND */
   NotificationSettingKind = 'NOTIFICATION_SETTING_KIND',
+  /** OAUTH */
   Oauth = 'OAUTH',
+  /** OBJECT */
   Object = 'OBJECT',
+  /** PACKAGED_BLOCK */
   PackagedBlock = 'PACKAGED_BLOCK',
+  /** PRODUCT */
   Product = 'PRODUCT',
+  /** PRODUCT_VIEW */
   ProductView = 'PRODUCT_VIEW',
+  /** SKILL */
   Skill = 'SKILL',
+  /** SOLUTION */
   Solution = 'SOLUTION',
+  /** SUB_WORKFLOW */
   SubWorkflow = 'SUB_WORKFLOW',
+  /** SURFACE_VIEW */
   SurfaceView = 'SURFACE_VIEW',
+  /** SYNCABLE_RESOURCE */
   SyncableResource = 'SYNCABLE_RESOURCE',
+  /** TOPBAR */
   Topbar = 'TOPBAR',
+  /** VIBE_ITEM_VIEW */
   VibeItemView = 'VIBE_ITEM_VIEW',
+  /** VIBE_OBJECT */
   VibeObject = 'VIBE_OBJECT',
+  /** WORKFLOW_TEMPLATE */
   WorkflowTemplate = 'WORKFLOW_TEMPLATE',
+  /** WORKSPACE_VIEW */
   WorkspaceView = 'WORKSPACE_VIEW'
 }
 
@@ -1374,7 +1658,9 @@ export type AppInstallUser = {
 
 /** The visibility type of an app */
 export enum AppKind {
+  /** App is private and only visible to the account that created it */
   Private = 'PRIVATE',
+  /** App is public and can be shared and installed by other accounts */
   Public = 'PUBLIC'
 }
 
@@ -1387,32 +1673,55 @@ export type AppMonetizationStatus = {
 
 /** Permitted OAuth scopes for apps */
 export enum AppPermission {
+  /** Permission scope: account:read */
   AccountRead = 'ACCOUNT_READ',
+  /** Permission scope: assets:read */
   AssetsRead = 'ASSETS_READ',
+  /** Permission scope: boards:read */
   BoardsRead = 'BOARDS_READ',
+  /** Permission scope: boards:write */
   BoardsWrite = 'BOARDS_WRITE',
+  /** Permission scope: departments:read */
   DepartmentsRead = 'DEPARTMENTS_READ',
+  /** Permission scope: departments:write */
   DepartmentsWrite = 'DEPARTMENTS_WRITE',
+  /** Permission scope: docs:read */
   DocsRead = 'DOCS_READ',
+  /** Permission scope: docs:write */
   DocsWrite = 'DOCS_WRITE',
+  /** Permission scope: me:read */
   MeRead = 'ME_READ',
+  /** Permission scope: notifications:write */
   NotificationsWrite = 'NOTIFICATIONS_WRITE',
+  /** Permission scope: tags:read */
   TagsRead = 'TAGS_READ',
+  /** Permission scope: teams:read */
   TeamsRead = 'TEAMS_READ',
+  /** Permission scope: teams:write */
   TeamsWrite = 'TEAMS_WRITE',
+  /** Permission scope: updates:read */
   UpdatesRead = 'UPDATES_READ',
+  /** Permission scope: updates:write */
   UpdatesWrite = 'UPDATES_WRITE',
+  /** Permission scope: users:read */
   UsersRead = 'USERS_READ',
+  /** Permission scope: users:write */
   UsersWrite = 'USERS_WRITE',
+  /** Permission scope: webhooks:read */
   WebhooksRead = 'WEBHOOKS_READ',
+  /** Permission scope: webhooks:write */
   WebhooksWrite = 'WEBHOOKS_WRITE',
+  /** Permission scope: workspaces:read */
   WorkspacesRead = 'WORKSPACES_READ',
+  /** Permission scope: workspaces:write */
   WorkspacesWrite = 'WORKSPACES_WRITE'
 }
 
 /** The current state of an app based on its version status */
 export enum AppStatus {
+  /** App is in draft state and not yet published */
   Draft = 'DRAFT',
+  /** App has a live published version */
   Live = 'LIVE'
 }
 
@@ -1548,9 +1857,13 @@ export type AppVersion = {
 
 /** The lifecycle status of an app version */
 export enum AppVersionStatus {
+  /** Version has been superseded by a newer version */
   Deprecated = 'DEPRECATED',
+  /** Version is in development and not yet live */
   Draft = 'DRAFT',
+  /** Version is live and available to users */
   Live = 'LIVE',
+  /** Version is in the process of being promoted */
   Promoting = 'PROMOTING'
 }
 
@@ -1689,8 +2002,11 @@ export type ArtifactAsset = {
 
 /** Generation status of an artifact across its create/update/finalize lifecycle */
 export enum ArtifactGenerationStatus {
+  /** The agent run producing this artifact has completed */
   Finalized = 'FINALIZED',
+  /** No generation activity in flight */
   Idle = 'IDLE',
+  /** The artifact is being generated (create/update in flight) */
   InProgress = 'IN_PROGRESS'
 }
 
@@ -1717,8 +2033,11 @@ export type ArtifactRun = {
 
 /** Lifecycle state of an artifact */
 export enum ArtifactState {
+  /** Artifact is active */
   Active = 'ACTIVE',
+  /** Artifact has been archived */
   Archive = 'ARCHIVE',
+  /** Artifact has been soft-deleted */
   Deleted = 'DELETED'
 }
 
@@ -1749,9 +2068,13 @@ export type Asset = {
 
 /** AI captioning status of a vibe asset */
 export enum AssetCaptionStatus {
+  /** Captioning completed successfully */
   Completed = 'COMPLETED',
+  /** Captioning failed; asset is still usable */
   Failed = 'FAILED',
+  /** Captioning has not been requested */
   None = 'NONE',
+  /** Captioning is in progress */
   Pending = 'PENDING'
 }
 
@@ -1810,8 +2133,11 @@ export type AssetUploadResult = {
 
 /** The source of the asset */
 export enum AssetsSource {
+  /** Assets from file columns and item's files gallery. From version 2026-04, also includes assets from updates */
   All = 'all',
+  /** Assets only from file columns */
   Columns = 'columns',
+  /** Assets only from item's files gallery */
   Gallery = 'gallery'
 }
 
@@ -1992,7 +2318,7 @@ export type AttachBoardToObjectSchemaResult = {
   board_id?: Maybe<Scalars['ID']['output']>;
   /** Human readable reason the board was not attached. For display fallback and logs, not branching. */
   error?: Maybe<Scalars['String']['output']>;
-  /** Stable code for the refusal, for example templateTopologyMismatch or templateBoardAlreadyAttached. This is what clients should classify on to pick a message. */
+  /** Stable code for the refusal, for example templateTopologyMismatch, templateBoardAlreadyAttached, templateBoardIsTemplate (the board is itself a template) or templateBoardNotOwned. This is what clients should classify on to pick a message. */
   error_code?: Maybe<Scalars['String']['output']>;
   /** Whether this board (and its classic subitems board, if any) now follows the object schema. */
   success?: Maybe<Scalars['Boolean']['output']>;
@@ -2052,6 +2378,7 @@ export type AttributesInput = {
 
 /** The type of entity that a reaction is attributed to. */
 export enum AttributionEntity {
+  /** An AI agent */
   Agent = 'AGENT'
 }
 
@@ -2135,7 +2462,9 @@ export type BaseFieldType = FieldType & {
 /** The role of the user. */
 export enum BaseRoleName {
   Admin = 'ADMIN',
+  /** An external agent detached member user. */
   ExternalAgentDetachedMember = 'EXTERNAL_AGENT_DETACHED_MEMBER',
+  /** An external agent member user. */
   ExternalAgentMember = 'EXTERNAL_AGENT_MEMBER',
   Guest = 'GUEST',
   Member = 'MEMBER',
@@ -2345,7 +2674,7 @@ export type Board = {
   __typename?: 'Board';
   /** The user's permission level for this board (view / edit). */
   access_level: BoardAccessLevel;
-  /** Activity log entries for this board with enhanced filtering and pagination (last 90 days only). Requests for data older than 90 days will return a validation error. */
+  /** Activity log entries for this board with enhanced filtering and pagination. */
   activity_logs?: Maybe<BoardActivityLogsPage>;
   /** The board's folder unique identifier. */
   board_folder_id?: Maybe<Scalars['ID']['output']>;
@@ -2400,6 +2729,8 @@ export type Board = {
   permissions: Scalars['String']['output'];
   /** The board's state (all / active / archived / deleted). */
   state: State;
+  /** The board's subitem columns. */
+  subitem_columns?: Maybe<Array<Maybe<Column>>>;
   /** The board's subscribers. */
   subscribers: Array<Maybe<User>>;
   /** The board's specific tags. */
@@ -2508,7 +2839,9 @@ export type BoardViewsArgs = {
 
 /** The board access level of the user */
 export enum BoardAccessLevel {
+  /** Edit contents */
   Edit = 'edit',
+  /** View */
   View = 'view'
 }
 
@@ -2521,11 +2854,24 @@ export type BoardActivityLogsPage = {
   logs?: Maybe<Array<ActivityLog>>;
 };
 
+/** One board and the window to look for changes in — mirrors a per-board entry of the REST users_activity request body */
+export type BoardActivityScopeInput = {
+  board_id: Scalars['ID']['input'];
+  /** Epoch seconds of the caller's last visit to this board. Omit for never-visited semantics: only the single most-recent change is returned, and the requester's own change is not stripped. */
+  from_seconds?: InputMaybe<Scalars['Int']['input']>;
+  /** Epoch seconds upper bound of the window. Requires from_seconds. */
+  to_seconds?: InputMaybe<Scalars['Int']['input']>;
+};
+
 /** The board attributes available. */
 export enum BoardAttributes {
+  /** Object that contains available Video conferences on the board. */
   Communication = 'communication',
+  /** Board description. */
   Description = 'description',
+  /** The nickname of items on the board (item terminology). */
   ItemNickname = 'item_nickname',
+  /** Board name. */
   Name = 'name'
 }
 
@@ -2594,10 +2940,19 @@ export type BoardAutomationDeleteResult = {
 
 /** Basic role names for board permissions. Each role grants different levels of access to the board. */
 export enum BoardBasicRoleName {
+  /**
+   * Assigned Contributor role - Can edit content (items) only, and only for items
+   * where they are assigned in the specified assignee columns (Coming soon - not
+   * yet supported, please use the UI instead)
+   */
   AssignedContributor = 'assigned_contributor',
+  /** Contributor role - Can edit content (items) only, but not the structure (columns, groups) of the board */
   Contributor = 'contributor',
+  /** Editor role - Can edit both the structure (columns, groups) and content (items) of the board */
   Editor = 'editor',
+  /** Member role - Default board role access. Can only be used for agent users. */
   Member = 'member',
+  /** Viewer role - Read-only access to the board, cannot edit structure or content */
   Viewer = 'viewer'
 }
 
@@ -2625,6 +2980,17 @@ export type BoardDependencies = {
   total_count?: Maybe<Scalars['Int']['output']>;
 };
 
+/** Dependency cycles found on a board */
+export type BoardDependencyCyclesResult = {
+  __typename?: 'BoardDependencyCyclesResult';
+  /** The ID of the board */
+  board_id?: Maybe<Scalars['ID']['output']>;
+  /** The cycles found. An empty list means the board was checked and is clean */
+  cycles?: Maybe<Array<DependencyCycle>>;
+  /** True when more cycles exist than the reporting cap allows */
+  truncated?: Maybe<Scalars['Boolean']['output']>;
+};
+
 /** A board duplication */
 export type BoardDuplication = {
   __typename?: 'BoardDuplication';
@@ -2636,9 +3002,13 @@ export type BoardDuplication = {
 
 /** Edit permissions level for boards. */
 export enum BoardEditPermissions {
+  /** Assignee */
   Assignee = 'assignee',
+  /** Collaborators */
   Collaborators = 'collaborators',
+  /** Everyone */
   Everyone = 'everyone',
+  /** Owners */
   Owners = 'owners'
 }
 
@@ -2672,7 +3042,9 @@ export type BoardGraphExport = {
 
 /** The board hierarchy type */
 export enum BoardHierarchy {
+  /** classic */
   Classic = 'classic',
+  /** multilevel of items */
   MultiLevel = 'multi_level'
 }
 
@@ -2694,15 +3066,21 @@ export type BoardInferredMetadata = {
 
 /** The board kinds available. */
 export enum BoardKind {
+  /** Private boards. */
   Private = 'private',
+  /** Public boards. */
   Public = 'public',
+  /** Shareable boards. */
   Share = 'share'
 }
 
 /** The privacy kind for a board */
 export enum BoardKindInput {
+  /** Private board — visible only to subscribed members */
   Private = 'PRIVATE',
+  /** Public board — visible to all workspace members */
   Public = 'PUBLIC',
+  /** Shareable board — accessible via share link */
   Share = 'SHARE'
 }
 
@@ -2733,23 +3111,33 @@ export type BoardMuteSettings = {
  * - CURRENT_USER_MUTE_ALL: Only the current user has all notifications muted from this board.
  */
 export enum BoardMuteState {
+  /** Only the current user has all notifications muted from this board */
   CurrentUserMuteAll = 'CURRENT_USER_MUTE_ALL',
+  /** The current user will only be notified for the enabled custom settings. configurable settings: IM_MENTIONED, IM_ASSIGNED, AUTOMATION_NOTIFY */
   CustomSettings = 'CUSTOM_SETTINGS',
+  /** The current user will only be notified if mentioned or assigned on the board */
   MentionsAndAssignsOnly = 'MENTIONS_AND_ASSIGNS_ONLY',
+  /** All notifications for all users are muted on this board. This state is set by the board owner(s) and only they can change it. */
   MuteAll = 'MUTE_ALL',
+  /** The board is not muted at all (default state). This state is set by the board owner(s) and only they can change it. */
   NotMuted = 'NOT_MUTED'
 }
 
 /** The board object types. */
 export enum BoardObjectType {
+  /** Parent Board. */
   Board = 'board',
+  /** Custom Object. */
   CustomObject = 'custom_object',
+  /** Document. */
   Document = 'document',
+  /** Sub Items Board. */
   SubItemsBoard = 'sub_items_board'
 }
 
 /** A board-scope permission that can be required in addition to regular board read access. */
 export enum BoardPermission {
+  /** Permission to use the board in reporting. */
   BoardReportability = 'BOARD_REPORTABILITY'
 }
 
@@ -2822,15 +3210,42 @@ export type BoardRelationValue = ColumnValue & {
 
 /** The board subscriber kind. */
 export enum BoardSubscriberKind {
+  /** Board owner. */
   Owner = 'owner',
+  /** Board subscriber. */
   Subscriber = 'subscriber'
 }
 
 /** Enum representing different usage types for board operations */
 export enum BoardUsage {
+  /** Board can be connected to a portfolio */
   ConnectToPortfolio = 'CONNECT_TO_PORTFOLIO',
+  /** Board can be converted to a project */
   ConvertToProject = 'CONVERT_TO_PROJECT'
 }
+
+/** Changes on one board, grouped by the user who made them */
+export type BoardUserActivityEntry = {
+  __typename?: 'BoardUserActivityEntry';
+  board_id?: Maybe<Scalars['ID']['output']>;
+  /** Empty when the board had no qualifying changes in its window */
+  changes_by_users?: Maybe<Array<BoardUserChange>>;
+};
+
+/** Per-board user activity. Boards the caller is not authorized for are omitted. */
+export type BoardUserActivityResult = {
+  __typename?: 'BoardUserActivityResult';
+  boards?: Maybe<Array<BoardUserActivityEntry>>;
+};
+
+/** A user who changed something on the board, and when they last did */
+export type BoardUserChange = {
+  __typename?: 'BoardUserChange';
+  /** Epoch seconds (millisecond precision) of this user's most recent change */
+  last_change_seconds?: Maybe<Scalars['Float']['output']>;
+  /** ID of the user who made the change */
+  user_id?: Maybe<Scalars['ID']['output']>;
+};
 
 /** A board's view. */
 export type BoardView = {
@@ -2845,6 +3260,8 @@ export type BoardView = {
   filter_user_id?: Maybe<Scalars['Int']['output']>;
   /** The view's unique identifier. */
   id: Scalars['ID']['output'];
+  /** Whether this view is pinned. */
+  is_pinned?: Maybe<Scalars['Boolean']['output']>;
   /** The view's name. */
   name: Scalars['String']['output'];
   /** The view's settings, the structure varies by view type */
@@ -2865,7 +3282,9 @@ export type BoardView = {
 
 /** The board view access level of the user */
 export enum BoardViewAccessLevel {
+  /** Edit */
   Edit = 'edit',
+  /** View */
   View = 'view'
 }
 
@@ -2885,26 +3304,25 @@ export enum BoardViewPermissions {
 
 /** The available board view types. */
 export enum BoardViewTypeValues {
+  /** Calendar board view. */
   CalendarBoardView = 'CalendarBoardView',
+  /** Doc board view. */
   DocBoardView = 'DocBoardView',
+  /** Empty board view. */
   EmptyBoardView = 'EmptyBoardView',
+  /** Form board view. */
   FormBoardView = 'FormBoardView',
+  /** Table board view. */
   TableBoardView = 'TableBoardView'
 }
 
 /** Options to order by. */
 export enum BoardsOrderBy {
+  /** The rank order of the board creation time (desc). */
   CreatedAt = 'created_at',
+  /** The last time the user making the request used the board (desc). */
   UsedAt = 'used_at'
 }
-
-/** Boolean compound query with must/should/must_not clauses */
-export type BoolInput = {
-  /** Child clauses */
-  clauses: Array<ClauseInput>;
-  /** Minimum number of SHOULD clauses that must match */
-  min_should_match?: InputMaybe<Scalars['Int']['input']>;
-};
 
 /** Boost configuration for search results. Key-value pairs where key is strategy type and value is boost weight. */
 export type BoostConfigurationInput = {
@@ -2932,13 +3350,21 @@ export type BuildSettingsInput = {
 
 /** Types of building blocks that can be created in a Magic solution. */
 export enum BuildingBlock {
+  /** A personal AI agent attached to the solution. 1-3 agents are auto-created and scoped to subsets of boards. Defaults ON; pass an explicit allow-list omitting AGENT (or exclude it) to opt out. */
   Agent = 'AGENT',
+  /** Workflow automations that trigger actions based on board events. */
   Automations = 'AUTOMATIONS',
+  /** A Monday.com board with columns and items. */
   Board = 'BOARD',
+  /** A dashboard with widgets for data visualization. */
   Dashboard = 'DASHBOARD',
+  /** Folder, a logical grouping or domain area within the solution. */
   Domain = 'DOMAIN',
+  /** A form linked to a board for data collection. */
   Form = 'FORM',
+  /** Items (rows) within a Monday.com board containing actual data entries. */
   Items = 'ITEMS',
+  /** A Vibe app — an AI-generated frontend application embedded in the solution. */
   Vibe = 'VIBE'
 }
 
@@ -2962,12 +3388,19 @@ export type BulkDetachBoardResult = {
 
 /** Reason for failure when status is Rejected or Failed */
 export enum BulkImportFailureReason {
+  /** The account item capacity was exceeded. */
   AccountCapacityExceeded = 'ACCOUNT_CAPACITY_EXCEEDED',
+  /** The authorization failed. */
   AuthorizationFailed = 'AUTHORIZATION_FAILED',
+  /** The board capacity exceeded. */
   BoardCapacityExceeded = 'BOARD_CAPACITY_EXCEEDED',
+  /** The uploaded file exceeded the 150 MB maximum. */
   FileTooLarge = 'FILE_TOO_LARGE',
+  /** An internal error occurred. */
   InternalError = 'INTERNAL_ERROR',
+  /** The upload is invalid. */
   InvalidUpload = 'INVALID_UPLOAD',
+  /** The permission was denied. */
   PermissionDenied = 'PERMISSION_DENIED'
 }
 
@@ -2999,10 +3432,15 @@ export type BulkImportItemCounts = {
 
 /** Current state of the import process */
 export enum BulkImportState {
+  /** The import is completed. */
   Completed = 'COMPLETED',
+  /** The import is failed. */
   Failed = 'FAILED',
+  /** The import is processing. */
   Processing = 'PROCESSING',
+  /** The import is rejected. */
   Rejected = 'REJECTED',
+  /** The upload is pending. */
   UploadPending = 'UPLOAD_PENDING'
 }
 
@@ -3063,12 +3501,20 @@ export type CalculatedCapabilityInput = {
 
 /** Available functions for calculating values in column capabilities */
 export enum CalculatedFunction {
+  /** Count the number of labels */
   CountKeys = 'COUNT_KEYS',
+  /** Calculate the maximum value */
   Max = 'MAX',
+  /** Calculate the minimum value */
   Min = 'MIN',
+  /** Calculate both minimum and maximum values for time ranges */
   MinMax = 'MIN_MAX',
+  /** No calculation */
   None = 'NONE',
-  Sum = 'SUM'
+  /** Calculate the sum of all values */
+  Sum = 'SUM',
+  /** Collect the unique values */
+  UniqueValues = 'UNIQUE_VALUES'
 }
 
 /** Additional quota allocated beyond the base plan limit */
@@ -3103,15 +3549,25 @@ export type CampaignsAnalyticsEvent = {
 
 /** Types of analytics events for campaigns */
 export enum CampaignsAnalyticsEventKind {
+  /** Email was bounced back */
   EmailBounced = 'EMAIL_BOUNCED',
+  /** Link in email was clicked by recipient */
   EmailClicked = 'EMAIL_CLICKED',
+  /** Email was successfully delivered */
   EmailDelivered = 'EMAIL_DELIVERED',
+  /** Email was dropped before sending */
   EmailDropped = 'EMAIL_DROPPED',
+  /** Email was opened by recipient */
   EmailOpened = 'EMAIL_OPENED',
+  /** Recipient marked email as spam */
   EmailRecipientComplaint = 'EMAIL_RECIPIENT_COMPLAINT',
+  /** email_recipient_group_resubscribed */
   EmailRecipientGroupResubscribed = 'EMAIL_RECIPIENT_GROUP_RESUBSCRIBED',
+  /** email_recipient_group_unsubscribed */
   EmailRecipientGroupUnsubscribed = 'EMAIL_RECIPIENT_GROUP_UNSUBSCRIBED',
+  /** Recipient unsubscribed */
   EmailRecipientUnsubscribed = 'EMAIL_RECIPIENT_UNSUBSCRIBED',
+  /** Email was sent */
   EmailSent = 'EMAIL_SENT'
 }
 
@@ -3166,10 +3622,15 @@ export type CampaignsBrandColor = {
 
 /** Types of brand colors */
 export enum CampaignsBrandColorKind {
+  /** Accent brand color */
   Accent = 'ACCENT',
+  /** Other brand color */
   Other = 'OTHER',
+  /** Primary brand color */
   Primary = 'PRIMARY',
+  /** Secondary brand color */
   Secondary = 'SECONDARY',
+  /** Text color */
   Text = 'TEXT'
 }
 
@@ -3200,14 +3661,19 @@ export type CampaignsBrandImage = {
 
 /** Types of brand images */
 export enum CampaignsBrandImageKind {
+  /** Image attachment */
   Attachment = 'ATTACHMENT',
+  /** Primary brand logo */
   PrimaryLogo = 'PRIMARY_LOGO',
+  /** Secondary brand logo */
   SecondaryLogo = 'SECONDARY_LOGO'
 }
 
 /** Status of a brand image */
 export enum CampaignsBrandImageStatus {
+  /** Image confirmed */
   Confirmed = 'CONFIRMED',
+  /** Image pending confirmation */
   Pending = 'PENDING'
 }
 
@@ -3331,13 +3797,21 @@ export type CampaignsInsight = {
 
 /** Classification type of an insight */
 export enum CampaignsInsightClassificationKind {
+  /** Competitor move insight */
   CompetitorMove = 'COMPETITOR_MOVE',
+  /** Crisis or event insight */
   CrisisEvent = 'CRISIS_EVENT',
+  /** Customer behavior insight */
   CustomerBehavior = 'CUSTOMER_BEHAVIOR',
+  /** Emerging technology insight */
   EmergingTechnology = 'EMERGING_TECHNOLOGY',
+  /** Market trend insight */
   MarketTrend = 'MARKET_TREND',
+  /** Other type of insight */
   Other = 'OTHER',
+  /** Product launch insight */
   ProductLaunch = 'PRODUCT_LAUNCH',
+  /** Regulatory change insight */
   RegulatoryChange = 'REGULATORY_CHANGE'
 }
 
@@ -3372,8 +3846,11 @@ export type CampaignsInsightStatusFacet = {
 
 /** Status of an insight */
 export enum CampaignsInsightStatusKind {
+  /** active */
   Active = 'ACTIVE',
+  /** consumed */
   Consumed = 'CONSUMED',
+  /** dismissed */
   Dismissed = 'DISMISSED'
 }
 
@@ -3403,7 +3880,9 @@ export type CampaignsPhysicalAddress = {
 
 /** When the campaign should be sent */
 export enum CampaignsScheduleKind {
+  /** Send at scheduled time */
   Later = 'LATER',
+  /** Send immediately */
   Now = 'NOW'
 }
 
@@ -3445,13 +3924,17 @@ export type CampaignsSettings = {
 
 /** Fields available for sorting campaigns */
 export enum CampaignsSortField {
+  /** Sort by creation date */
   CreatedAt = 'CREATED_AT',
+  /** Sort by campaign name */
   Name = 'NAME'
 }
 
 /** Sort direction */
 export enum CampaignsSortOrder {
+  /** Ascending order */
   Asc = 'ASC',
+  /** Descending order */
   Desc = 'DESC'
 }
 
@@ -3466,16 +3949,27 @@ export type CampaignsStatusFacet = {
 
 /** Status of a campaign */
 export enum CampaignsStatusKind {
+  /** Campaign is blocked */
   Blocked = 'BLOCKED',
+  /** Campaign is in draft state */
   Draft = 'DRAFT',
+  /** Campaign failed */
   Failed = 'FAILED',
+  /** Campaign is being generated */
   Generating = 'GENERATING',
+  /** Campaign is ongoing */
   Ongoing = 'ONGOING',
+  /** Campaign is on hold */
   OnHold = 'ON_HOLD',
+  /** Campaign is processing */
   Processing = 'PROCESSING',
+  /** Campaign is ready to send */
   ReadyToSend = 'READY_TO_SEND',
+  /** Campaign is scheduled for later */
   Scheduled = 'SCHEDULED',
+  /** Campaign is currently sending */
   Sending = 'SENDING',
+  /** Campaign has been sent */
   Sent = 'SENT'
 }
 
@@ -3543,8 +4037,11 @@ export type CampaignsUserFacet = {
 
 /** Fields that can be overridden in a column policy */
 export enum CanOverrideField {
+  /** Allow overriding column description */
   Description = 'description',
+  /** Allow overriding column settings */
   Settings = 'settings',
+  /** Allow overriding column title */
   Title = 'title'
 }
 
@@ -3596,6 +4093,8 @@ export type ChatMessage = {
   __typename?: 'ChatMessage';
   /** ID of the account that owns this message */
   account_id?: Maybe<Scalars['Int']['output']>;
+  /** Id the client sent with this user message (send_chat_message client_message_id), echoed back so it can match its local copy. Null for agent and system messages. */
+  client_message_id?: Maybe<Scalars['ID']['output']>;
   /** ID of the code version associated with this message */
   code_version_id?: Maybe<Scalars['String']['output']>;
   /** UI element references attached to this message */
@@ -3614,7 +4113,7 @@ export type ChatMessage = {
   id?: Maybe<Scalars['Int']['output']>;
   /** Integration blocks the user picked in the UI and attached to this message */
   integration_blocks: Array<ChatMessageIntegrationBlock>;
-  /** LangSmith trace id for the turn that produced this message. Exposed only to users with the trace-exposure flag enabled; populated only in environments where tracing is on. Clients build the trace URL from this id. */
+  /** Internal trace identifier for the turn that produced this message; not available to all accounts. */
   langsmith_trace_id?: Maybe<Scalars['ID']['output']>;
   /** The message content */
   message?: Maybe<Scalars['JSON']['output']>;
@@ -3626,9 +4125,9 @@ export type ChatMessage = {
   rollback_version_id?: Maybe<Scalars['String']['output']>;
   /** Who sent this message */
   sender?: Maybe<ChatSender>;
-  /** Temporal namespace for the turn that produced this message (`vibe`, or `default` under monday-mirror). Gated behind the same trace-exposure flag as langsmith_trace_id. */
+  /** Internal namespace for the turn that produced this message; not available to all accounts. */
   temporal_namespace?: Maybe<Scalars['String']['output']>;
-  /** Temporal workflow run id for the turn that produced this message. Gated behind the same trace-exposure flag as langsmith_trace_id. The workflow id is the vibe app id; clients build the Temporal UI URL from the run id, namespace, app id, env and region. */
+  /** Internal run identifier for the turn that produced this message; not available to all accounts. */
   temporal_run_id?: Maybe<Scalars['ID']['output']>;
   /** Turn identity id for the turn that produced this message. Null for messages predating V3. */
   turn_id?: Maybe<Scalars['ID']['output']>;
@@ -3681,13 +4180,15 @@ export type ChatMessageComponentReferenceInput = {
   title: Scalars['String']['input'];
 };
 
-/** A context source (e.g. a monday Doc) the user started the app from. Metadata only, never the content */
+/** A context source (e.g. a monday Doc or form) the user started the app from. Metadata only, never the content */
 export type ChatMessageContextSource = {
   __typename?: 'ChatMessageContextSource';
-  /** The entity id (for DOC: the id in the doc URL) */
+  /** The entity id (for DOC: the id in the doc URL; for FORM: the form board view id) */
   id?: Maybe<Scalars['ID']['output']>;
   /** Display name shown in the message chip */
   name?: Maybe<Scalars['String']['output']>;
+  /** The id of the entity that contains the source (for FORM: the board id). Null for DOC */
+  parent_id?: Maybe<Scalars['ID']['output']>;
   /** The kind of entity */
   type?: Maybe<ContextSourceType>;
 };
@@ -3728,16 +4229,27 @@ export type ChatMessageIntegrationBlock = {
 
 /** The type of chat message */
 export enum ChatMessageKind {
+  /** A board connected notification message */
   BoardConnected = 'BOARD_CONNECTED',
+  /** A board disconnected notification message */
   BoardDisconnected = 'BOARD_DISCONNECTED',
+  /** List of chips to be presented to the user */
   Chips = 'CHIPS',
+  /** A call-to-action message */
   Cta = 'CTA',
+  /** An error message with a list of errors */
   Error = 'ERROR',
+  /** An indication message */
   Indication = 'INDICATION',
+  /** One pipeline step (lint, build, deploy) with its status — copy is owned by the client */
   Process = 'PROCESS',
+  /** A processing message */
   Processing = 'PROCESSING',
+  /** A message containing the LLM's reasoning */
   Reasoning = 'REASONING',
+  /** A text message */
   Text = 'TEXT',
+  /** A tool call message */
   ToolCall = 'TOOL_CALL'
 }
 
@@ -3753,14 +4265,19 @@ export type ChatMessagePaginationInput = {
 
 /** The mode of a chat message */
 export enum ChatModeKind {
+  /** Ask mode - message for Q&A without code generation */
   Ask = 'ASK',
+  /** Build mode - message related to code generation */
   Build = 'BUILD',
+  /** Plan mode - message for planning phase before code generation */
   Plan = 'PLAN'
 }
 
 /** The sender of a chat message */
 export enum ChatSender {
+  /** Message is from a user */
   User = 'USER',
+  /** Message is from a Vibe AI agent */
   Vibe = 'VIBE'
 }
 
@@ -3791,51 +4308,6 @@ export type ChildBoardDataViewSource = {
   relation_type?: Maybe<DataViewSourceRelationType>;
   /** The source identifier. */
   source_id?: Maybe<DataViewSourceId>;
-};
-
-/** Provider-specific data for Claude managed agents */
-export type ClaudeProviderData = {
-  __typename?: 'ClaudeProviderData';
-  /** Available environments on this provider */
-  environments?: Maybe<Array<ProviderResource>>;
-  /** Available vaults for secret management on this provider */
-  vaults?: Maybe<Array<ProviderResource>>;
-};
-
-/** A single search clause. Exactly one leaf or compound field must be set. occur and boost are optional modifiers used when this clause is a child of a bool or dis_max. */
-export type ClauseInput = {
-  /** When true, matches every document (equivalent to a match-all query) */
-  all?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Boolean compound of sub-clauses (must / should / must_not) */
-  bool?: InputMaybe<BoolInput>;
-  /** Score multiplier for this clause */
-  boost?: InputMaybe<Scalars['Float']['input']>;
-  /** Disjunction-max compound — scores by the best-matching sub-clause */
-  dis_max?: InputMaybe<DisMaxInput>;
-  /** Matches documents where the field has any indexed value */
-  exists?: InputMaybe<FieldInput>;
-  /** Typo-tolerant fuzzy term match (Levenshtein) */
-  fuzzy?: InputMaybe<FuzzyInput>;
-  /** How this clause affects the parent score */
-  occur?: InputMaybe<Occur>;
-  /** Exact phrase match on a field */
-  phrase?: InputMaybe<FieldTextInput>;
-  /** Phrase-prefix (autocomplete) match */
-  phrase_prefix?: InputMaybe<FieldTextInput>;
-  /** Range match over a numeric or date field */
-  range?: InputMaybe<RangeInput>;
-  /** Regular-expression match on a field */
-  regex?: InputMaybe<FieldTextInput>;
-  /** Exact-term match on a field */
-  term?: InputMaybe<FieldTextInput>;
-  /** Term-prefix match on a field */
-  term_prefix?: InputMaybe<FieldTextInput>;
-  /** Matches if the field equals ALL of the given values */
-  terms_all?: InputMaybe<FieldTextListInput>;
-  /** Matches if the field equals ANY of the given values */
-  terms_any?: InputMaybe<FieldTextListInput>;
-  /** Wildcard pattern match (* and ?) */
-  wildcard?: InputMaybe<FieldTextInput>;
 };
 
 /** Result of clearing users department. */
@@ -3902,7 +4374,9 @@ export type Column = {
 
 /** Action to perform on an object schema column to change its active state. A column can be reactivated if it was previously deactivated. */
 export enum ColumnActiveStateAction {
+  /** Deprecate the column, preventing it from being used on new boards. */
   Deactivate = 'DEACTIVATE',
+  /** Reactivate a deprecated column. */
   Reactivate = 'REACTIVATE'
 }
 
@@ -3923,7 +4397,9 @@ export type ColumnCapabilitiesInput = {
 
 /** Capabilities supported by the API */
 export enum ColumnCapability {
+  /** Capability to show column's calculated value */
   Calculated = 'CALCULATED',
+  /** Capability to mark column as hidden */
   Visibility = 'VISIBILITY'
 }
 
@@ -3958,7 +4434,9 @@ export type ColumnPolicyInput = {
 
 /** The property name of the column to be changed. */
 export enum ColumnProperty {
+  /** the column description. */
   Description = 'description',
+  /** the column title. */
   Title = 'title'
 }
 
@@ -3986,48 +4464,90 @@ export type ColumnStyleInput = {
 
 /** Types of columns supported by the API */
 export enum ColumnType {
+  /** Number items according to their order in the group/board */
   AutoNumber = 'auto_number',
+  /** Connect data from other boards */
   BoardRelation = 'board_relation',
+  /** Perform actions on items by clicking a button */
   Button = 'button',
+  /** Check off items and see what's done at a glance */
   Checkbox = 'checkbox',
+  /** Manage a design system using a color palette */
   ColorPicker = 'color_picker',
+  /** Choose a country */
   Country = 'country',
+  /** Add the item's creator and creation date automatically */
   CreationLog = 'creation_log',
+  /** Add dates like deadlines to ensure you never drop the ball */
   Date = 'date',
+  /** Set up dependencies between items in the board */
   Dependency = 'dependency',
+  /** Document your work and increase collaboration */
   DirectDoc = 'direct_doc',
+  /** Document your work and increase collaboration */
   Doc = 'doc',
+  /** Create a dropdown list of options */
   Dropdown = 'dropdown',
+  /** Email team members and clients directly from your board */
   Email = 'email',
+  /** Add files & docs to your item */
   File = 'file',
+  /** Use functions to manipulate data across multiple columns */
   Formula = 'formula',
   Group = 'group',
+  /** Add times to manage and schedule tasks, shifts and more */
   Hour = 'hour',
+  /** Integration is really cool... */
   Integration = 'integration',
+  /** Show all item's assignees */
   ItemAssignees = 'item_assignees',
+  /** Show a unique ID for each item */
   ItemId = 'item_id',
+  /** Add the person that last updated the item and the date */
   LastUpdated = 'last_updated',
+  /** Simply hyperlink to any website */
   Link = 'link',
+  /** Place multiple locations on a geographic map */
   Location = 'location',
+  /** Add large amounts of text without changing column width */
   LongText = 'long_text',
+  /** Show and edit columns' data from connected boards */
   Mirror = 'mirror',
+  /** Name is really cool... */
   Name = 'name',
+  /** Add revenue, costs, time estimations and more */
   Numbers = 'numbers',
+  /** Assign people to improve team work */
   People = 'people',
+  /** Assign a person to increase ownership and accountability (deprecated) */
   Person = 'person',
+  /** Call your contacts directly from monday.com */
   Phone = 'phone',
+  /** Show progress by combining status columns in a battery */
   Progress = 'progress',
+  /** Rate or rank anything visually */
   Rating = 'rating',
+  /** Get an instant overview of where things stand */
   Status = 'status',
+  /** Use the subtasks column to create another level of tasks */
   Subtasks = 'subtasks',
+  /** Add tags to categorize items across multiple boards */
   Tags = 'tags',
+  /** Assign a full team to an item */
   Team = 'team',
+  /** Add textual information e.g. addresses, names or keywords */
   Text = 'text',
+  /** Easily track time spent on each item, group, and board */
   TimeTracking = 'time_tracking',
+  /** Visualize your item’s duration, with a start and end date */
   Timeline = 'timeline',
+  /** Unsupported column type */
   Unsupported = 'unsupported',
+  /** Vote on an item e.g. pick a new feature or a favorite lunch place */
   Vote = 'vote',
+  /** Select the week on which each item should be completed */
   Week = 'week',
+  /** Keep track of the time anywhere in the world */
   WorldClock = 'world_clock'
 }
 
@@ -4087,6 +4607,7 @@ export enum ConditionOperandPrimitiveType {
 
 /** Logical operator for combining rules or conditions. Must be OR — the question is shown if any rule or condition is satisfied. */
 export enum ConditionOperator {
+  /** Logical OR — any condition being met is sufficient. */
   Or = 'OR'
 }
 
@@ -4240,63 +4761,19 @@ export type ConfigureIntegrationFieldValue = {
 
 /** Severity of a schedule conflict. */
 export enum ConflictSeverity {
+  /** The resource has no working days within the task timeline. */
   Full = 'FULL',
+  /** The resource has some working days within the task timeline, but fewer than the task duration requires. */
   Partial = 'PARTIAL'
 }
 
-/** Connect input for a custom external agent. callback_url is optional — omit to create a detached agent (identity only, not executable via webhook). */
-export type ConnectCustomAgentInput = {
-  /** Optional custom avatar URL for the agent (HTTPS). When omitted, a default avatar is used. */
-  avatar_url?: InputMaybe<Scalars['String']['input']>;
-  /** The HTTPS callback URL the platform invokes for agent events. Omit to create a detached agent. */
-  callback_url?: InputMaybe<Scalars['String']['input']>;
-  /** The display name for the connected agent */
-  name: Scalars['String']['input'];
-};
-
-/** Input for connecting an external agent via BYOA (Bring Your Own Agent) */
-export type ConnectExternalAgentInput = {
-  /** Optional callback URL for agent event notifications */
-  callback_url?: InputMaybe<Scalars['String']['input']>;
-  /** The credential ID used to authenticate with the external provider */
-  credential_id: Scalars['ID']['input'];
-  /** Optional environment identifier on the external provider */
-  environment_id?: InputMaybe<Scalars['ID']['input']>;
-  /** The unique identifier of the agent on the external provider */
-  external_agent_id: Scalars['ID']['input'];
-  /** The type of external provider (e.g. CLAUDE_MANAGED_AGENT, CUSTOM_AGENT) */
-  external_provider_type: ExternalProvider;
-  /** The display name for the connected agent */
-  name: Scalars['String']['input'];
-  /** Optional vault identifier for secret management on the external provider */
-  vault_id?: InputMaybe<Scalars['ID']['input']>;
-};
-
-/** Payload returned after initiating an external agent connection (async operation) */
-export type ConnectExternalAgentPayload = {
-  __typename?: 'ConnectExternalAgentPayload';
-  /** The connection status (e.g. "connecting"). Final result is delivered via Pusher. */
-  status?: Maybe<Scalars['String']['output']>;
-};
-
-/** Result of a synchronous external-agent connect. agent_id is always present; signing_secret, api_token, and instructions are populated only for custom agents. */
-export type ConnectExternalAgentResult = {
-  __typename?: 'ConnectExternalAgentResult';
-  /** The internal monday-agents agent ID */
-  agent_id?: Maybe<Scalars['ID']['output']>;
-  /** Custom-agent only — API token for the agent to call back into monday. Never logged. */
-  api_token?: Maybe<Scalars['String']['output']>;
-  /** Custom-agent only — setup instructions for the integrator. Never logged. */
-  instructions?: Maybe<Scalars['String']['output']>;
-  /** Custom-agent only — secret used to sign callback requests. Never logged. */
-  signing_secret?: Maybe<Scalars['String']['output']>;
-};
-
-/** Wrapper input for the synchronous connect mutation. Currently supports custom agents only. */
-export type ConnectExternalAgentSyncInput = {
-  /** Connect a custom agent. */
-  custom?: InputMaybe<ConnectCustomAgentInput>;
-};
+/** The relation type of a connect boards column's link to a board. */
+export enum ConnectBoardsRelationType {
+  /** Items connect to boards. */
+  ItemToBoard = 'ITEM_TO_BOARD',
+  /** Items connect to items. */
+  Regular = 'REGULAR'
+}
 
 /** The result of the connect_migration_job mutation. */
 export type ConnectMigrationJobResult = {
@@ -4361,7 +4838,9 @@ export type ConnectedColumnItem = {
 
 /** Output format for connected items (Connect Boards) column values in CSV exports. */
 export enum ConnectedItemColumnFormat {
+  /** Use the linked items' IDs (e.g. "111, 222") instead of their names. */
   Id = 'ID',
+  /** Use the linked items' display names (e.g. "Task A, Task B"). This is the default. */
   Name = 'NAME'
 }
 
@@ -4403,15 +4882,20 @@ export type Connection = {
 
 /** Reference content the app is started from. Its content is read once and given to the agent as context; it is not a data source and is not stored on the app */
 export type ContextSourceInput = {
-  /** The entity id (for DOC: the id in the doc URL) */
+  /** The entity id (for DOC: the id in the doc URL; for FORM: the form board view id) */
   id: Scalars['ID']['input'];
+  /** The id of the entity that contains the source. Required for FORM (the board id); not allowed for DOC */
+  parent_id?: InputMaybe<Scalars['ID']['input']>;
   /** The kind of entity */
   type: ContextSourceType;
 };
 
 /** The kind of monday entity used as per-message context for an app */
 export enum ContextSourceType {
-  Doc = 'DOC'
+  /** A monday Doc, identified by the id in its URL */
+  Doc = 'DOC',
+  /** A monday form, identified by its board view id; parent_id is the id of its board */
+  Form = 'FORM'
 }
 
 export type ConvertBoardToProjectInput = {
@@ -4496,8 +4980,8 @@ export type CreateAppFeatureRelationInput = {
   type: AppFeatureRelationKind;
 };
 
-/** Input for creating an app with its configuration data. */
-export type CreateAppInput = {
+/** Input for creating an app with its configuration data and string permission scopes. */
+export type CreateAppInputV2 = {
   /** Array of user IDs with access */
   collaborators?: InputMaybe<Array<Scalars['ID']['input']>>;
   /** Detailed description of the app */
@@ -4507,7 +4991,7 @@ export type CreateAppInput = {
   /** The display name of the app */
   name: Scalars['String']['input'];
   /** Array of permission scopes */
-  permissions?: InputMaybe<Array<AppPermission>>;
+  permissions?: InputMaybe<Array<Scalars['String']['input']>>;
   /** URL-friendly identifier in the format {account_slug}_{app_slug}. Must contain only letters, numbers, dashes, and underscores. Example: "account-slug_my-scheduler" */
   slug?: InputMaybe<Scalars['String']['input']>;
   /** Webhook endpoint URL */
@@ -4516,8 +5000,11 @@ export type CreateAppInput = {
 
 /** Mode for creating a new vibe app */
 export enum CreateAppModeInput {
+  /** Ask mode - creates empty app for Q&A about what to build */
   Ask = 'ASK',
+  /** Build mode - generates code based on the prompt */
   Build = 'BUILD',
+  /** Plan mode - starts the agent in planning mode */
   Plan = 'PLAN'
 }
 
@@ -4574,7 +5061,7 @@ export type CreateBoardExportOptionsInput = {
   header_row?: InputMaybe<HeaderFormat>;
   /** Include item_id (and parent_item_id when subitems are enabled) columns at the end of CSV exports. */
   include_item_identifiers?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Add a trailing `Project Board` column with the board ID of the project board connected to each row through its portfolio project-link column (`portfolio_project_link`). Resolves to the first linked project's board ID; blank when the row has no linked project. Ignored for non-CSV formats, and only emitted when the export-cross-board-project-board-link release flag is enabled. */
+  /** Add a trailing `Project Board` column with the board ID of the project board connected to each row through its portfolio project-link column (`portfolio_project_link`). Resolves to the first linked project's board ID; blank when the row has no linked project. Ignored for non-CSV formats and where not available to the account. */
   include_project_board_link?: InputMaybe<Scalars['Boolean']['input']>;
   /** Include subitems in the export */
   include_subitems?: InputMaybe<Scalars['Boolean']['input']>;
@@ -4885,9 +5372,13 @@ export type CreateTaskInput = {
 
 /** Statuses allowed when creating a new task (excludes terminal statuses) */
 export enum CreateTaskStatus {
+  /** Task is being worked on */
   InProgress = 'IN_PROGRESS',
+  /** Task is deferred */
   NotNow = 'NOT_NOW',
+  /** Task is pending triage */
   Pending = 'PENDING',
+  /** Task is queued to be worked on */
   Todo = 'TODO'
 }
 
@@ -4955,8 +5446,11 @@ export type CreateUserInput = {
 
 /** The invitation method allowed when creating a user via create_multiple_users. */
 export enum CreateUserInvitationMethod {
+  /** Created as an agent user. */
   AgentUserCreation = 'AGENT_USER_CREATION',
+  /** Created as an API user. */
   ApiUserCreation = 'API_USER_CREATION',
+  /** Created via system creation flow. */
   SystemCreation = 'SYSTEM_CREATION'
 }
 
@@ -5056,7 +5550,9 @@ export type CrossEntityDateRangeInput = {
 
 /** The access level for CRUD operations on a workflow */
 export enum CrudAccessLevel {
+  /** Anyone in the account can modify the workflow */
   Account = 'ACCOUNT',
+  /** Only the creator can modify the workflow (default for account-level workflows) */
   User = 'USER'
 }
 
@@ -5224,9 +5720,37 @@ export type CustomOutputFieldConfig = OutputFieldConfig & {
 
 /** These settings can be customized when the board is in CUSTOM_SETTINGS mute state. Configurable settings: IM_MENTIONED, IM_ASSIGNED, AUTOMATION_NOTIFY */
 export enum CustomizableBoardSettings {
+  /** Notify me on automation notify step on this board */
   AutomationNotify = 'AUTOMATION_NOTIFY',
+  /** Notify me when I am assigned on this board */
   ImAssigned = 'IM_ASSIGNED',
+  /** Notify me when I am mentioned on this board */
   ImMentioned = 'IM_MENTIONED'
+}
+
+/** One item in a cycle, with the predecessor that links to it */
+export type CycleEdge = {
+  __typename?: 'CycleEdge';
+  /** The item that is part of the cycle */
+  item_id?: Maybe<Scalars['ID']['output']>;
+  /** The item that this item depends on within the cycle */
+  predecessor_id?: Maybe<Scalars['ID']['output']>;
+  /** The link type, or null when the stored edge type is unrecognised */
+  type?: Maybe<CycleEdgeType>;
+};
+
+/** The type of link between two items inside a cycle */
+export enum CycleEdgeType {
+  /** Finish to Finish: the item can finish only after its predecessor finishes */
+  Ff = 'FF',
+  /** Finish to Start: the item can start only after its predecessor finishes */
+  Fs = 'FS',
+  /** Parent/subitem link rather than a dependency */
+  Hierarchy = 'HIERARCHY',
+  /** Start to Finish: the item can finish only after its predecessor starts */
+  Sf = 'SF',
+  /** Start to Start: the item can start only after its predecessor starts */
+  Ss = 'SS'
 }
 
 /** API usage data. */
@@ -5303,6 +5827,632 @@ export type DashboardPreview = {
   name?: Maybe<Scalars['String']['output']>;
 };
 
+/** The account's export credits today: one pool, refilled at midnight UTC, that every user's exports draw from. */
+export type DataHubAccountCredits = {
+  __typename?: 'DataHubAccountCredits';
+  /** Credits the account gets per day. */
+  daily_credits?: Maybe<Scalars['Int']['output']>;
+  /** Credits left today. */
+  remaining_today?: Maybe<Scalars['Int']['output']>;
+  /** When the pool next refills. */
+  resets_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** Credits used so far today. */
+  used_today?: Maybe<Scalars['Int']['output']>;
+};
+
+/** The outcome of starting the account's exports. A user skipped is an ordinary outcome, not a failed request: read `skipped`. */
+export type DataHubAccountExportRun = {
+  __typename?: 'DataHubAccountExportRun';
+  /** When every user had been started or skipped. */
+  finished_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** The exports that were started. */
+  queued?: Maybe<Array<DataHubQueuedUserExport>>;
+  /** The users whose export was not started, and why. */
+  skipped?: Maybe<Array<DataHubSkippedUserExport>>;
+  /** When starting began. */
+  started_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+};
+
+/** Why a user's export was not started. */
+export enum DataHubAccountExportSkipReason {
+  /** The start failed. */
+  Failed = 'FAILED',
+  /** An export of theirs is already running. */
+  JobAlreadyRunning = 'JOB_ALREADY_RUNNING',
+  /** Their monday connection is missing. */
+  NoConnectedToken = 'NO_CONNECTED_TOKEN',
+  /** They never saved a selection. */
+  NoSavedSelection = 'NO_SAVED_SELECTION',
+  /** Their selection is empty: they opted out. */
+  NoWorkspacesSelected = 'NO_WORKSPACES_SELECTED',
+  /** The start was refused. */
+  Rejected = 'REJECTED'
+}
+
+/** A user of the account who saved an export selection: one row of the Admin table. */
+export type DataHubAccountExportUser = {
+  __typename?: 'DataHubAccountExportUser';
+  /** The most one of their exports may cost. */
+  allowance?: Maybe<DataHubExportAllowance>;
+  /** What their export costs, from their latest priced run. */
+  last_cost?: Maybe<DataHubAccountExportUserCost>;
+  /** Their latest export run. Null when they never ran one. */
+  latest_job?: Maybe<DataHubAccountExportUserJob>;
+  /** The monday user, for their name and photo. */
+  user?: Maybe<User>;
+  /** The monday user. */
+  user_id?: Maybe<Scalars['ID']['output']>;
+  /** How many workspaces their selection names. 0 means they opted out. */
+  workspace_count?: Maybe<Scalars['Int']['output']>;
+};
+
+/** What a user's export costs, from their latest priced run. */
+export type DataHubAccountExportUserCost = {
+  __typename?: 'DataHubAccountExportUserCost';
+  /** When it was priced. */
+  computed_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** The cost in credits. */
+  credits?: Maybe<Scalars['Int']['output']>;
+  /** Whether pricing stopped early, so the real cost is at least this. */
+  is_lower_bound?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** A user's latest export run, as the Admin table shows it. */
+export type DataHubAccountExportUserJob = {
+  __typename?: 'DataHubAccountExportUserJob';
+  /** How many boards it exports. */
+  boards_count?: Maybe<Scalars['Int']['output']>;
+  /** How many boards are still to export. Null when the live count can't be read right now: unknown, not 0. */
+  boards_left?: Maybe<Scalars['Int']['output']>;
+  /** When it ended. Null while it runs. */
+  completed_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** When it started. */
+  created_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** Why the export budget stopped it, when it did. */
+  failure_code?: Maybe<DataHubExportFailureCode>;
+  /** The run. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Where the run is. */
+  status?: Maybe<DataHubExportJobStatus>;
+};
+
+/** Whether an analytics query has been built into its table. Queries are only built by an export. */
+export enum DataHubAnalyticsBuildState {
+  /** Its table exists. */
+  Built = 'BUILT',
+  /** An export ran since it changed, and its table still does not exist. */
+  NotBuilt = 'NOT_BUILT',
+  /** Changed since the last export: builds on the next one. */
+  Pending = 'PENDING',
+  /** Could not be told right now. */
+  Unknown = 'UNKNOWN'
+}
+
+/** One of the caller's analytics queries: a saved SELECT that each export builds into a table of the same name in their analytics layer. */
+export type DataHubAnalyticsTable = {
+  __typename?: 'DataHubAnalyticsTable';
+  /** Whether it has been built into its table. */
+  build_state?: Maybe<DataHubAnalyticsBuildState>;
+  /** When it was created. */
+  created_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** Other analytics queries that read this one, which break if it is renamed or deleted. Null, with an error, when any query's SQL could not be read, since that one might read it. */
+  dependent_table_names?: Maybe<Array<Scalars['String']['output']>>;
+  /** Its SELECT. Null, with an error, when it could not be read. */
+  select_sql?: Maybe<Scalars['String']['output']>;
+  /** The query, and the table it builds. */
+  table_name?: Maybe<Scalars['String']['output']>;
+  /** When it last changed. */
+  updated_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+};
+
+/** A change to an analytics query. Its table changes on the next export, not now. */
+export type DataHubAnalyticsTableChange = {
+  __typename?: 'DataHubAnalyticsTableChange';
+  /** More about it. */
+  message?: Maybe<Scalars['String']['output']>;
+  /** What was done. */
+  status?: Maybe<Scalars['String']['output']>;
+  /** The query. */
+  table_name?: Maybe<Scalars['String']['output']>;
+};
+
+/** An analytics query that was renamed. The next export drops the old table and builds the new one. */
+export type DataHubAnalyticsTableRename = {
+  __typename?: 'DataHubAnalyticsTableRename';
+  /** Other analytics queries that read the old name, and now need updating. */
+  dependent_table_names?: Maybe<Array<Scalars['String']['output']>>;
+  /** More about it. */
+  message?: Maybe<Scalars['String']['output']>;
+  /** Its old name. */
+  previous_table_name?: Maybe<Scalars['String']['output']>;
+  /** What was done. */
+  status?: Maybe<Scalars['String']['output']>;
+  /** Its new name. */
+  table_name?: Maybe<Scalars['String']['output']>;
+};
+
+/** What exporting one board costs. */
+export type DataHubBoardCredits = {
+  __typename?: 'DataHubBoardCredits';
+  /** The monday board. */
+  board_id?: Maybe<Scalars['ID']['output']>;
+  /** What exporting it costs. */
+  credits?: Maybe<Scalars['Int']['output']>;
+};
+
+/** What the caller can do in Data Hub, to decide what to offer them. */
+export type DataHubCapabilities = {
+  __typename?: 'DataHubCapabilities';
+  /** Whether scheduled exports are available on the caller's account. */
+  has_scheduled_exports?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the caller holds the Data Hub admin grant: account-wide exports, credits, allowances and the schedule. Not the same as being a monday account admin. */
+  is_admin?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** The most one of a user's exports may cost. */
+export type DataHubExportAllowance = {
+  __typename?: 'DataHubExportAllowance';
+  /** The allowance in credits. */
+  credits?: Maybe<Scalars['Int']['output']>;
+  /** Whether an admin set it, rather than it being the account's default share. */
+  is_custom?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** What one of the caller's exports may cost, and how exports are priced. */
+export type DataHubExportBudget = {
+  __typename?: 'DataHubExportBudget';
+  /** The caller's allowance: the most one of their exports may cost. A run over it is stopped before it starts. */
+  max_credits?: Maybe<Scalars['Int']['output']>;
+  /** How a run is priced. */
+  pricing?: Maybe<DataHubExportPricing>;
+  /** Where light, medium and heavy exports begin. */
+  size_thresholds?: Maybe<DataHubExportSizeThresholds>;
+};
+
+/** A run's price in export credits. */
+export type DataHubExportCost = {
+  __typename?: 'DataHubExportCost';
+  /** The most one of its owner's exports may cost, when the run was checked. */
+  allowance?: Maybe<Scalars['Int']['output']>;
+  /** What the run costs. */
+  credits?: Maybe<Scalars['Int']['output']>;
+  /** The boards that cost the most, heaviest first. */
+  heaviest_boards?: Maybe<Array<DataHubHeavyBoard>>;
+  /** Whether pricing stopped early, so `credits` is a lower bound. */
+  is_partial?: Maybe<Scalars['Boolean']['output']>;
+  /** How many boards were priced. */
+  priced_boards?: Maybe<Scalars['Int']['output']>;
+};
+
+/** What a selection would cost to export now, without exporting it. Ask for it again by id until status is not RUNNING. */
+export type DataHubExportEstimate = {
+  __typename?: 'DataHubExportEstimate';
+  /** The most one of the selection owner's exports may cost. */
+  allowance?: Maybe<Scalars['Int']['output']>;
+  /** What each priced board costs. */
+  board_credits?: Maybe<Array<DataHubBoardCredits>>;
+  /** How many boards the selection covers. */
+  boards_count?: Maybe<Scalars['Int']['output']>;
+  /** What exporting the selection would cost. Null until priced. */
+  credits?: Maybe<Scalars['Int']['output']>;
+  /** Why it failed, when it did. */
+  failure?: Maybe<DataHubExportEstimateFailure>;
+  /** Identifies the selection that was priced. Compare with requested_fingerprint: an estimate already running for an earlier selection is answered instead of a new one. */
+  fingerprint?: Maybe<Scalars['String']['output']>;
+  /** When it finished. Null while running. */
+  finished_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** The boards that cost the most, heaviest first. */
+  heaviest_boards?: Maybe<Array<DataHubHeavyBoard>>;
+  /** The estimate. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Whether pricing stopped early, so `credits` is a lower bound. */
+  is_partial?: Maybe<Scalars['Boolean']['output']>;
+  /** How far it has got, while running. */
+  progress?: Maybe<DataHubExportEstimateProgress>;
+  /** Identifies the selection this request asked to price. */
+  requested_fingerprint?: Maybe<Scalars['String']['output']>;
+  /** When pricing started. */
+  started_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** Where the estimate is. */
+  status?: Maybe<DataHubExportEstimateStatus>;
+};
+
+/** Why an estimate failed. */
+export enum DataHubExportEstimateFailure {
+  /** The boards could not be priced. */
+  PricingFailed = 'PRICING_FAILED',
+  /** Pricing took too long and was given up. */
+  TimedOut = 'TIMED_OUT'
+}
+
+/** How far a running estimate has got. */
+export type DataHubExportEstimateProgress = {
+  __typename?: 'DataHubExportEstimateProgress';
+  /** Boards to price. Null until they are found. */
+  boards_count?: Maybe<Scalars['Int']['output']>;
+  /** Boards priced so far. */
+  priced_boards?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Where an estimate is. */
+export enum DataHubExportEstimateStatus {
+  /** Priced. */
+  Done = 'DONE',
+  /** Could not be priced; see `failure`. */
+  Failed = 'FAILED',
+  /** Still pricing; ask again. */
+  Running = 'RUNNING'
+}
+
+/** Why the export budget stopped a run before it fetched anything. */
+export enum DataHubExportFailureCode {
+  /** The run could not be priced, so it was not started. */
+  CostCheckFailed = 'COST_CHECK_FAILED',
+  /** The account's credits for today could not cover the run. */
+  CreditsExhausted = 'CREDITS_EXHAUSTED',
+  /** The run costs more than its owner's allowance. */
+  OverBudget = 'OVER_BUDGET'
+}
+
+/** One export run: the Sync History row for it. */
+export type DataHubExportJob = {
+  __typename?: 'DataHubExportJob';
+  /** How many boards it exports. Null until they are found. */
+  boards_count?: Maybe<Scalars['Int']['output']>;
+  /** How many boards are still to export. Null when the live count can't be read right now: unknown, not 0. */
+  boards_left?: Maybe<Scalars['Int']['output']>;
+  /** When it ended, whichever way. Null while it runs. */
+  completed_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** What it costs in export credits. Null until it is priced. */
+  cost?: Maybe<DataHubExportCost>;
+  /** When the run started. */
+  created_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** Boards that could not be exported. */
+  failed_board_ids?: Maybe<Array<Scalars['ID']['output']>>;
+  /** Why the export budget stopped it, when it did. */
+  failure_code?: Maybe<DataHubExportFailureCode>;
+  /** Why it failed, in words for its owner: the export budget's reason when failure_code is set, otherwise "The export could not be completed." */
+  failure_reason?: Maybe<Scalars['String']['output']>;
+  /** The run. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Where the run is. */
+  status?: Maybe<DataHubExportJobStatus>;
+  /** The workspaces it covers. */
+  workspace_ids?: Maybe<Array<Scalars['ID']['output']>>;
+};
+
+/** Where an export run is. */
+export enum DataHubExportJobStatus {
+  /** Cancelled before it finished. */
+  Aborted = 'ABORTED',
+  /** Finished. Some boards may have failed. */
+  Completed = 'COMPLETED',
+  /** Stopped without finishing. */
+  Failed = 'FAILED',
+  /** Finding and pricing the boards. */
+  Initializing = 'INITIALIZING',
+  /** Exporting boards. */
+  InProgress = 'IN_PROGRESS',
+  /** Waiting for the user's data space to be created; runs once it exists. */
+  Provisioning = 'PROVISIONING'
+}
+
+/** A page of export runs, newest first. */
+export type DataHubExportJobsPage = {
+  __typename?: 'DataHubExportJobsPage';
+  /** The runs on this page. */
+  data?: Maybe<Array<DataHubExportJob>>;
+  /** Whether more follow, and the cursor for them. */
+  page_info?: Maybe<DataHubPageInfo>;
+};
+
+/** How a run is priced: credits_per_board for every board, plus one credit per items_per_credit items, times linked_item_multiplier for a board with linked items. */
+export type DataHubExportPricing = {
+  __typename?: 'DataHubExportPricing';
+  /** Credits each board costs. */
+  credits_per_board?: Maybe<Scalars['Int']['output']>;
+  /** Items one credit buys. */
+  items_per_credit?: Maybe<Scalars['Int']['output']>;
+  /** What item credits are multiplied by on a board with linked items. */
+  linked_item_multiplier?: Maybe<Scalars['Int']['output']>;
+};
+
+/** The account's export schedule: when users' exports run on their own. */
+export type DataHubExportSchedule = {
+  __typename?: 'DataHubExportSchedule';
+  /** The hours (0–23, in `timezone`) it runs at, once or twice a day. */
+  hours_of_day?: Maybe<Array<Scalars['Int']['output']>>;
+  /** Whether it runs, or is paused. */
+  is_enabled?: Maybe<Scalars['Boolean']['output']>;
+  /** Its most recent run. Null before the first. */
+  last_run?: Maybe<DataHubExportScheduleLastRun>;
+  /** When it next runs. Null while paused. */
+  next_run_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** The IANA timezone of the hours. */
+  timezone?: Maybe<Scalars['String']['output']>;
+  /** When it was last saved. */
+  updated_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** The admin who last saved it. */
+  updated_by?: Maybe<Scalars['ID']['output']>;
+  /** The users it runs for, when user_scope is SELECTED. Empty for ALL. */
+  user_ids?: Maybe<Array<Scalars['ID']['output']>>;
+  /** Whose exports it runs. */
+  user_scope?: Maybe<DataHubExportScheduleUserScope>;
+  /** Pass as expected_version when saving, so a concurrent save is not overwritten. */
+  version?: Maybe<Scalars['Int']['output']>;
+};
+
+/** The account's export schedule, to save. */
+export type DataHubExportScheduleInput = {
+  /** The version you read (0 if there is no schedule yet). Saving fails with CONFLICT if someone saved since. */
+  expected_version: Scalars['Int']['input'];
+  /** One or two different hours (0–23) to run at, in `timezone`. */
+  hours_of_day: Array<Scalars['Int']['input']>;
+  /** Run it, or keep it paused. */
+  is_enabled: Scalars['Boolean']['input'];
+  /** An IANA timezone, e.g. Europe/Berlin. */
+  timezone: Scalars['String']['input'];
+  /** The users to run for, when user_scope is SELECTED: 1 to 1,000. */
+  user_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** Whose exports to run. */
+  user_scope: DataHubExportScheduleUserScope;
+};
+
+/** The schedule's most recent run. */
+export type DataHubExportScheduleLastRun = {
+  __typename?: 'DataHubExportScheduleLastRun';
+  /** Exports that failed to start. */
+  failed?: Maybe<Scalars['Int']['output']>;
+  /** When it finished. */
+  finished_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** How late after scheduled_at it ran. */
+  late_by_seconds?: Maybe<Scalars['Int']['output']>;
+  /** What happened. */
+  outcome?: Maybe<DataHubExportScheduleOutcome>;
+  /** Exports started. */
+  queued?: Maybe<Scalars['Int']['output']>;
+  /** Why it was missed or dropped. */
+  reason?: Maybe<Scalars['String']['output']>;
+  /** The time it was scheduled for. */
+  scheduled_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** Users skipped. */
+  skipped?: Maybe<Scalars['Int']['output']>;
+};
+
+/** What happened at a scheduled run. */
+export enum DataHubExportScheduleOutcome {
+  /** The run was not made, e.g. Data Hub or scheduled exports were off. */
+  Dropped = 'DROPPED',
+  /** The run came too late and was skipped. */
+  Missed = 'MISSED',
+  /** The users' exports were started. */
+  Started = 'STARTED'
+}
+
+/** Whose exports a schedule runs. */
+export enum DataHubExportScheduleUserScope {
+  /** Every user with a saved selection, including users who save one later. */
+  All = 'ALL',
+  /** Only the users named in user_ids. */
+  Selected = 'SELECTED'
+}
+
+/** What the caller's exports cover: their standing selection of workspaces, folders and boards, used by every export of theirs. */
+export type DataHubExportSelection = {
+  __typename?: 'DataHubExportSelection';
+  /** When the selection was last saved. Null when it never was. */
+  updated_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** The workspaces selected. Empty when the caller has opted out, or never chose. */
+  workspaces?: Maybe<Array<DataHubWorkspaceSelection>>;
+};
+
+/** The credits where an export stops being light, and stops being medium. */
+export type DataHubExportSizeThresholds = {
+  __typename?: 'DataHubExportSizeThresholds';
+  /** The most credits a light export costs. */
+  light_max?: Maybe<Scalars['Int']['output']>;
+  /** The most credits a medium export costs; above it is heavy. */
+  medium_max?: Maybe<Scalars['Int']['output']>;
+};
+
+/** One of the boards that cost the most credits. */
+export type DataHubHeavyBoard = {
+  __typename?: 'DataHubHeavyBoard';
+  /** The monday board. */
+  board_id?: Maybe<Scalars['ID']['output']>;
+  /** What exporting it costs. */
+  credits?: Maybe<Scalars['Int']['output']>;
+  /** The board's name when it was priced. */
+  name?: Maybe<Scalars['String']['output']>;
+};
+
+/** A layer of the caller's own exported monday data. */
+export enum DataHubLayer {
+  /** Tables built from the caller's analytics queries. */
+  Analytics = 'ANALYTICS',
+  /** The exported boards, items, users and workspaces, as exported. */
+  Trusted = 'TRUSTED'
+}
+
+/** When the account's export schedule next exports the caller's selection. */
+export type DataHubNextExportRun = {
+  __typename?: 'DataHubNextExportRun';
+  /** When the next scheduled run starts. Null when none will run for the caller: no schedule, it is paused, it does not cover them, or scheduled exports are not available on the account. */
+  next_run_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+};
+
+/** Where a page of a cursor-paged list sits. */
+export type DataHubPageInfo = {
+  __typename?: 'DataHubPageInfo';
+  /** Pass as `cursor` to get the next page. Opaque: do not parse or build one. Null on the last page. */
+  end_cursor?: Maybe<Scalars['String']['output']>;
+  /** Whether another page follows this one. */
+  has_next_page?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** A column of a query's results. */
+export type DataHubQueryColumn = {
+  __typename?: 'DataHubQueryColumn';
+  /** The column. */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Its SQL type. */
+  type?: Maybe<Scalars['String']['output']>;
+};
+
+/** Where a query is and, once it has SUCCEEDED, a page of its rows. Ask again while it is QUEUED or RUNNING. */
+export type DataHubQueryResults = {
+  __typename?: 'DataHubQueryResults';
+  /** The results' columns. Empty until it has SUCCEEDED. */
+  columns?: Maybe<Array<DataHubQueryColumn>>;
+  /** Why it failed or was cancelled. */
+  failure_reason?: Maybe<Scalars['String']['output']>;
+  /** Whether more rows follow, and the cursor for them. */
+  page_info?: Maybe<DataHubPageInfo>;
+  /** This page of rows. Empty until it has SUCCEEDED. */
+  rows?: Maybe<Array<DataHubQueryRow>>;
+  /** Where the query is. */
+  status?: Maybe<DataHubQueryStatus>;
+};
+
+/** One row of results. */
+export type DataHubQueryRow = {
+  __typename?: 'DataHubQueryRow';
+  /** Its values as text, in the order of `columns`. Null for SQL NULL. */
+  values: Array<Maybe<Scalars['String']['output']>>;
+};
+
+/** A query that was started. */
+export type DataHubQueryStart = {
+  __typename?: 'DataHubQueryStart';
+  /** The query: pass to data_hub_query_results. */
+  id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Where a query is. */
+export enum DataHubQueryStatus {
+  /** Cancelled. */
+  Cancelled = 'CANCELLED',
+  /** Failed; see failure_reason. */
+  Failed = 'FAILED',
+  /** Waiting to run. */
+  Queued = 'QUEUED',
+  /** Running. */
+  Running = 'RUNNING',
+  /** Finished; its rows can be read. */
+  Succeeded = 'SUCCEEDED'
+}
+
+/** A user's export that was started. */
+export type DataHubQueuedUserExport = {
+  __typename?: 'DataHubQueuedUserExport';
+  /** The run started for them; follow it with data_hub_account_export_users. */
+  job_id?: Maybe<Scalars['ID']['output']>;
+  /** The monday user. */
+  user_id?: Maybe<Scalars['ID']['output']>;
+  /** Workspaces it covers. */
+  workspace_count?: Maybe<Scalars['Int']['output']>;
+};
+
+/** A user's export that was not started. */
+export type DataHubSkippedUserExport = {
+  __typename?: 'DataHubSkippedUserExport';
+  /** More about why, for a refused start. Null for FAILED: the error behind it can name our infrastructure, so it is logged, not shown. */
+  detail?: Maybe<Scalars['String']['output']>;
+  /** Why it was not started. */
+  reason?: Maybe<DataHubAccountExportSkipReason>;
+  /** The monday user. */
+  user_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** A table the caller can query. */
+export type DataHubTable = {
+  __typename?: 'DataHubTable';
+  /** Its columns. */
+  columns?: Maybe<Array<DataHubTableColumn>>;
+  /** The table, as SQL names it. */
+  name?: Maybe<Scalars['String']['output']>;
+};
+
+/** A column of a table. */
+export type DataHubTableColumn = {
+  __typename?: 'DataHubTableColumn';
+  /** The column. */
+  name?: Maybe<Scalars['String']['output']>;
+  /** Its SQL type. */
+  type?: Maybe<Scalars['String']['output']>;
+};
+
+/** A user's export run that was cancelled. */
+export type DataHubUserExportCancellation = {
+  __typename?: 'DataHubUserExportCancellation';
+  /** The run. */
+  job_id?: Maybe<Scalars['ID']['output']>;
+  /** The monday user. */
+  user_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** What a user's saved selection would cost to export now, as an admin sees it: the estimate, plus the account's daily credits and what is left of them today. Ask for it again by id until status is not RUNNING. */
+export type DataHubUserExportEstimate = {
+  __typename?: 'DataHubUserExportEstimate';
+  /** The most one of the selection owner's exports may cost. */
+  allowance?: Maybe<Scalars['Int']['output']>;
+  /** What each priced board costs. */
+  board_credits?: Maybe<Array<DataHubBoardCredits>>;
+  /** How many boards the selection covers. */
+  boards_count?: Maybe<Scalars['Int']['output']>;
+  /** The account's export credits per day when it was priced. */
+  budget?: Maybe<Scalars['Int']['output']>;
+  /** What exporting the selection would cost. Null until priced. */
+  credits?: Maybe<Scalars['Int']['output']>;
+  /** Why it failed, when it did. */
+  failure?: Maybe<DataHubExportEstimateFailure>;
+  /** Identifies the selection that was priced. Compare with requested_fingerprint: an estimate already running for an earlier selection is answered instead of a new one. */
+  fingerprint?: Maybe<Scalars['String']['output']>;
+  /** When it finished. Null while running. */
+  finished_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** The boards that cost the most, heaviest first. */
+  heaviest_boards?: Maybe<Array<DataHubHeavyBoard>>;
+  /** The estimate. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Whether pricing stopped early, so `credits` is a lower bound. */
+  is_partial?: Maybe<Scalars['Boolean']['output']>;
+  /** How far it has got, while running. */
+  progress?: Maybe<DataHubExportEstimateProgress>;
+  /** What the account had left of them today when it was priced: whether a run would start now. */
+  remaining_today?: Maybe<Scalars['Int']['output']>;
+  /** Identifies the selection this request asked to price. */
+  requested_fingerprint?: Maybe<Scalars['String']['output']>;
+  /** When pricing started. */
+  started_at?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** Where the estimate is. */
+  status?: Maybe<DataHubExportEstimateStatus>;
+};
+
+/** One workspace in an export selection, whole or in part. */
+export type DataHubWorkspaceSelection = {
+  __typename?: 'DataHubWorkspaceSelection';
+  /** Individual boards exported, when not the whole workspace. */
+  board_ids?: Maybe<Array<Scalars['ID']['output']>>;
+  /** Folders whose boards are exported, when not the whole workspace. */
+  folder_ids?: Maybe<Array<Scalars['ID']['output']>>;
+  /** Whether every board in the workspace is exported, including boards added later. When true, folder_ids and board_ids are empty. */
+  include_all_boards?: Maybe<Scalars['Boolean']['output']>;
+  /** The monday workspace. */
+  workspace_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** One workspace to export, whole or in part. */
+export type DataHubWorkspaceSelectionInput = {
+  /** Individual boards to export, when not the whole workspace. */
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** Folders whose boards to export, when not the whole workspace. */
+  folder_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  /** Export every board in the workspace, including boards added later. When false, name at least one folder or board. */
+  include_all_boards: Scalars['Boolean']['input'];
+  /** The monday workspace. */
+  workspace_id: Scalars['ID']['input'];
+};
+
 /** Input for specifying a data source for a multi-board vibe app */
 export type DataSourceInput = {
   /** The ID of the data source (e.g. board ID) */
@@ -5366,7 +6516,9 @@ export type DataViewAddTargetColumnSourceMapping = {
 
 /** The kind of object that authorizes access to a data view. */
 export enum DataViewAuthorizationKind {
+  /** A monday.com board. */
   Board = 'BOARD',
+  /** A monday.com overview. */
   Overview = 'OVERVIEW',
   VibeApp = 'VIBE_APP'
 }
@@ -5527,6 +6679,7 @@ export enum DataViewColumnSubType {
   Phone = 'phone',
   Progress = 'progress',
   Rating = 'rating',
+  /** A resource connect-boards column. */
   Resource = 'resource',
   Status = 'status',
   Subtasks = 'subtasks',
@@ -5595,7 +6748,9 @@ export type DataViewPaginationMetadata = {
 
 /** Why a source was not restored with its data view. */
 export enum DataViewRestoreDroppedReason {
+  /** The caller passed include_source_ids and this source was not among them. */
   NotIncluded = 'NOT_INCLUDED',
+  /** The board or entity behind the source no longer exists. */
   ProjectDeleted = 'PROJECT_DELETED'
 }
 
@@ -5657,13 +6812,22 @@ export type DataViewSourceColumnUnavailable = {
 
 /** Why a source column is listed but cannot be chosen for mapping. */
 export enum DataViewSourceColumnUnavailableCode {
+  /** The column was deleted from the board. */
   ColumnDeleted = 'COLUMN_DELETED',
+  /** The formula is not valid. */
   FormulaInvalid = 'FORMULA_INVALID',
+  /** The formula depends on columns nested deeper than is supported. */
   FormulaMaxDepthExceeded = 'FORMULA_MAX_DEPTH_EXCEEDED',
+  /** The formula references a column that does not exist. */
   FormulaMissingColumn = 'FORMULA_MISSING_COLUMN',
+  /** The formula reads a column type that cannot be materialized. */
   FormulaUnsupportedColumnType = 'FORMULA_UNSUPPORTED_COLUMN_TYPE',
+  /** The formula uses a function that cannot be materialized. */
   FormulaUnsupportedFunction = 'FORMULA_UNSUPPORTED_FUNCTION',
-  FormulaUnsupportedReference = 'FORMULA_UNSUPPORTED_REFERENCE'
+  /** The formula reads a column in a way that cannot be materialized. */
+  FormulaUnsupportedReference = 'FORMULA_UNSUPPORTED_REFERENCE',
+  /** The formula uses a value that is not a column, such as the board or group name, which cannot be materialized. */
+  FormulaUnsupportedStaticReference = 'FORMULA_UNSUPPORTED_STATIC_REFERENCE'
 }
 
 /** A union of possible source errors. */
@@ -5698,13 +6862,17 @@ export type DataViewSourceInput = {
 
 /** The kind of object backing a data view source. */
 export enum DataViewSourceKind {
+  /** A monday.com board. */
   Board = 'BOARD',
+  /** A data entity (schema-type source). */
   DataEntity = 'DATA_ENTITY'
 }
 
 /** The relation type of a data view source. */
 export enum DataViewSourceRelationType {
+  /** The main/items relation. */
   Main = 'MAIN',
+  /** The subitems relation. */
   Subitem = 'SUBITEM'
 }
 
@@ -5740,7 +6908,9 @@ export type DataViewStructureSource = {
 
 /** How the structure endpoint groups a data view source. */
 export enum DataViewStructureSourceKind {
+  /** An entity, with its implementing boards listed in managed_board_ids. */
   Entity = 'ENTITY',
+  /** A board attached directly to the data view. */
   StandaloneBoard = 'STANDALONE_BOARD'
 }
 
@@ -6025,6 +7195,13 @@ export type DependencyConfig = {
   orderedMandatoryFields?: Maybe<Array<DependencyField>>;
 };
 
+/** A single cycle in the board dependency graph */
+export type DependencyCycle = {
+  __typename?: 'DependencyCycle';
+  /** The ordered items forming the cycle */
+  path?: Maybe<Array<CycleEdge>>;
+};
+
 /** A dependency edge representing a predecessor relationship between two items */
 export type DependencyEdge = {
   __typename?: 'DependencyEdge';
@@ -6068,7 +7245,9 @@ export type DependencyPulseValueInput = {
 
 /** The type of the dependency related column */
 export enum DependencyRelatedColumnTypes {
+  /** Date column */
   Date = 'DATE',
+  /** Timeline column */
   Timeline = 'TIMELINE'
 }
 
@@ -6082,9 +7261,13 @@ export type DependencyRelatedValueInput = {
 
 /** Type of dependency relationship between items */
 export enum DependencyRelation {
+  /** Finish to Finish - The dependent item can finish only after the predecessor finishes */
   Ff = 'FF',
+  /** Finish to Start - The dependent item can start only after the predecessor finishes */
   Fs = 'FS',
+  /** Start to Start - The dependent item can start only after the predecessor starts */
   Sf = 'SF',
+  /** Start to Finish - The dependent item can finish only after the predecessor starts */
   Ss = 'SS'
 }
 
@@ -6207,15 +7390,21 @@ export type DirectoryResource = {
 
 /** Attributes that can be updated on a resource directory entry */
 export enum DirectoryResourceAttribute {
+  /** Represents the resource directory job role attribute. */
   JobRole = 'JOB_ROLE',
+  /** Represents the resource directory location attribute. */
   Location = 'LOCATION',
+  /** Represents the resource directory skills attribute. */
   Skills = 'SKILLS'
 }
 
 /** The type of a directory resource */
 export enum DirectoryResourceKind {
+  /** A guest user */
   Guest = 'GUEST',
+  /** A member or admin user */
   User = 'USER',
+  /** A view-only user */
   Viewer = 'VIEWER'
 }
 
@@ -6228,14 +7417,6 @@ export type DirectoryResourcesResponse = {
   id: Scalars['ID']['output'];
   /** List of directory resources */
   resources: Array<DirectoryResource>;
-};
-
-/** Disjunction-max query — scores by the best-matching child clause */
-export type DisMaxInput = {
-  /** Child clauses */
-  clauses: Array<ClauseInput>;
-  /** Boost factor for non-best-matching clauses (0–1) */
-  tie_breaker?: InputMaybe<Scalars['Float']['input']>;
 };
 
 /** Reasons why specific actions are disabled on a column */
@@ -6259,13 +7440,6 @@ export type DiscardObjectSchemaBoardChangesInput = {
   editor_board_id: Scalars['ID']['input'];
   /** The object schema the board follows. */
   object_schema_id: Scalars['ID']['input'];
-};
-
-/** Payload returned after disconnecting an external agent */
-export type DisconnectExternalAgentPayload = {
-  __typename?: 'DisconnectExternalAgentPayload';
-  /** Whether the disconnection was successful */
-  success?: Maybe<Scalars['Boolean']['output']>;
 };
 
 /** The period of a discount */
@@ -6299,21 +7473,37 @@ export type DocBaseBlockContent = {
 
 /** Various documents blocks types, such as text. */
 export enum DocBlockContentType {
+  /** Bulleted list block */
   BulletedList = 'bulleted_list',
+  /** Check list block */
   CheckList = 'check_list',
+  /** Code block */
   Code = 'code',
+  /** Divider block */
   Divider = 'divider',
+  /** Image block */
   Image = 'image',
+  /** Large title block */
   LargeTitle = 'large_title',
+  /** Layout block */
   Layout = 'layout',
+  /** Medium title block */
   MediumTitle = 'medium_title',
+  /** Simple text block */
   NormalText = 'normal_text',
+  /** Notice block */
   NoticeBox = 'notice_box',
+  /** Numbered list block */
   NumberedList = 'numbered_list',
+  /** Page break block */
   PageBreak = 'page_break',
+  /** Quote text block */
   Quote = 'quote',
+  /** Small title block */
   SmallTitle = 'small_title',
+  /** Table block */
   Table = 'table',
+  /** Video block */
   Video = 'video'
 }
 
@@ -6330,8 +7520,11 @@ export type DocBlocksFromMarkdownResult = {
 
 /** The kind/type of document access level */
 export enum DocKind {
+  /** Private document */
   Private = 'private',
+  /** Public document */
   Public = 'public',
+  /** Shareable document */
   Share = 'share'
 }
 
@@ -6418,14 +7611,19 @@ export type DocsColumnValueInput = {
 
 /** Type of mention - user, document, or board */
 export enum DocsMention {
+  /** Mention of a board */
   Board = 'BOARD',
+  /** Mention of a document */
   Doc = 'DOC',
+  /** Mention of a user */
   User = 'USER'
 }
 
 /** Options to order by. */
 export enum DocsOrderBy {
+  /** The rank order of the document creation time (desc). */
   CreatedAt = 'created_at',
+  /** The last time the user making the request viewd the document (desc). */
   UsedAt = 'used_at'
 }
 
@@ -6608,14 +7806,19 @@ export type DropdownValueOption = {
 
 /** The board duplicate types available. */
 export enum DuplicateBoardType {
+  /** Duplicate board with structure and items. */
   DuplicateBoardWithPulses = 'duplicate_board_with_pulses',
+  /** Duplicate board with structure, items and updates. */
   DuplicateBoardWithPulsesAndUpdates = 'duplicate_board_with_pulses_and_updates',
+  /** Duplicate board with structure. */
   DuplicateBoardWithStructure = 'duplicate_board_with_structure'
 }
 
 /** Controls what gets copied when duplicating a document */
 export enum DuplicateType {
+  /** Creates a clean copy with only the document structure and content blocks. Best for creating templates or fresh copies. */
   DuplicateDocWithContent = 'duplicate_doc_with_content',
+  /** Creates a complete copy including document structure, content blocks, and all comments/update history. Use for full backups. */
   DuplicateDocWithContentAndUpdates = 'duplicate_doc_with_content_and_updates'
 }
 
@@ -6649,18 +7852,27 @@ export type Effort = {
 
 /** Kind of effort or availability to include in the utilization report. */
 export enum EffortKind {
+  /** Allocated effort hours. */
   Allocated = 'ALLOCATED',
+  /** Available capacity hours. */
   Available = 'AVAILABLE',
+  /** Planned effort hours. */
   Planned = 'PLANNED',
+  /** Spent effort hours. */
   Spent = 'SPENT'
 }
 
 /** Unit of effort calculation */
 export enum EffortUnit {
+  /** Effort per day (hours) */
   Daily = 'DAILY',
+  /** Full-time equivalent (0-1 ratio) */
   Fte = 'FTE',
+  /** Effort per month (hours) */
   Monthly = 'MONTHLY',
+  /** Total effort for the allocation period */
   Total = 'TOTAL',
+  /** Effort per week (hours) */
   Weekly = 'WEEKLY'
 }
 
@@ -6697,6 +7909,15 @@ export type EmailValue = ColumnValue & {
   updated_at?: Maybe<Scalars['Date']['output']>;
   /** The column's raw value in JSON format. */
   value?: Maybe<Scalars['JSON']['output']>;
+};
+
+/** The result of turning on scale mode for a connect boards column */
+export type EnableConnectBoardsScaleModeResult = {
+  __typename?: 'EnableConnectBoardsScaleModeResult';
+  /** The data view the column now reads its connected items through */
+  data_view: DataView;
+  /** The column's mirror columns that couldn't be pointed at a data view column. Each one needs a column picked in its settings. */
+  skipped_mirror_column_ids: Array<Scalars['ID']['output']>;
 };
 
 /** Result of enhancing a prompt with AI capabilities */
@@ -6822,11 +8043,17 @@ export type ExportBoardResult = {
 
 /** Structured reason an async export job failed. */
 export enum ExportFailureReason {
+  /** The caller lost permission to read the board. */
   BoardInaccessible = 'BOARD_INACCESSIBLE',
+  /** The board is deleted or archived. */
   BoardUnavailable = 'BOARD_UNAVAILABLE',
+  /** An unexpected internal error occurred. Retry the mutation. */
   InternalError = 'INTERNAL_ERROR',
+  /** The request was rejected during validation (e.g. unsupported CSV options). */
   InvalidRequest = 'INVALID_REQUEST',
+  /** The board has more items than the export limit allows. */
   ItemLimitExceeded = 'ITEM_LIMIT_EXCEEDED',
+  /** The board or a referenced resource could not be found. */
   NotFound = 'NOT_FOUND'
 }
 
@@ -6841,15 +8068,21 @@ export type ExportFile = {
 
 /** Output format for the exported board file. */
 export enum ExportFormat {
+  /** CSV formatted for round-trip import into mdb-data (cells encoded via @mondaydotcomorg/data-board-columns codecs). */
   Csv = 'CSV',
+  /** Excel spreadsheet format (.xlsx). */
   Xlsx = 'XLSX'
 }
 
 /** Lifecycle status of an async board export job. Polling clients should treat COMPLETED, FAILED, and CANCELLED as terminal. */
 export enum ExportJobStatus {
+  /** The export was cancelled. */
   Cancelled = 'CANCELLED',
+  /** The export finished successfully. download_url will be populated. */
   Completed = 'COMPLETED',
+  /** The export failed. failure_reason and (when available) failure_message will be populated. */
   Failed = 'FAILED',
+  /** The export is in progress. */
   Running = 'RUNNING'
 }
 
@@ -6940,7 +8173,9 @@ export type ExternalMember = {
   id: Scalars['ID']['output'];
   /** User ID of the person who invited this external user */
   invited_by_user_id: Scalars['ID']['output'];
-  /** When the last invitation was sent */
+  /** When the person last signed in to the app. Null if they never have. Stamped at login only. */
+  last_accessed_at?: Maybe<Scalars['Date']['output']>;
+  /** Last time an invitation or sign-in link was emailed to this guest. */
   last_invitation_sent_at: Scalars['Date']['output'];
   /** Current membership status */
   status: ExternalMembershipStatus;
@@ -6962,24 +8197,21 @@ export enum ExternalMembershipStatus {
   Revoked = 'REVOKED'
 }
 
-/** The type of external agent provider */
-export enum ExternalProvider {
-  ClaudeManagedAgent = 'CLAUDE_MANAGED_AGENT',
-  CustomAgent = 'CUSTOM_AGENT',
-  Openai = 'OPENAI'
-}
-
-/** Provider-specific data, use inline fragments to access fields per provider type */
-export type ExternalProviderData = ClaudeProviderData;
-
 /** Widget types available for creating data visualizations and displays */
 export enum ExternalWidget {
+  /** App feature widgets for displaying custom application features. Used to embed and render app-specific functionality within dashboards and views. */
   AppFeature = 'APP_FEATURE',
+  /** Battery widgets for progress tracking and completion status visualization. Displays progress bars, completion percentages, status indicators, and goal achievement metrics. Perfect for showing project completion, task progress, capacity utilization, and milestone tracking. */
   Battery = 'BATTERY',
+  /** Calendar widgets for timeline and schedule visualization. Displays date and timeline column data in a traditional calendar format, supporting time slots, color-coded events by board/group/status, and multi-board aggregation. Ideal for project scheduling, deadline tracking, event planning, and time-based workflow visualization. */
   Calendar = 'CALENDAR',
+  /** Chart widgets for visual data representation including pie charts, bar charts, line graphs, and column charts. Used to display trends, comparisons, distributions, and relationships between data points over time or categories. */
   Chart = 'CHART',
+  /** A Gantt chart visualization of board timelines with dependencies, grouping, and coloring capabilities. */
   Gantt = 'GANTT',
+  /** ListView widgets for displaying cross-board items in a tabular list format with filtering and sorting. */
   Listview = 'LISTVIEW',
+  /** Number widgets for displaying numeric metrics such as accumulated sums, averages, counts, totals, percentages. Ideal for showing single-value metrics, counters, calculated aggregations, and key performance indicators in a prominent numeric format. */
   Number = 'NUMBER'
 }
 
@@ -7014,7 +8246,9 @@ export type FailedUserProfilePicture = {
 
 /** The sentiment of user feedback */
 export enum FeedbackSentiment {
+  /** Negative feedback indicating dissatisfaction */
   Negative = 'NEGATIVE',
+  /** Positive feedback indicating satisfaction */
   Positive = 'POSITIVE'
 }
 
@@ -7025,28 +8259,6 @@ export type FieldInformation = {
   link?: Maybe<Scalars['JSON']['output']>;
   /** The text content of the field information */
   text?: Maybe<Scalars['String']['output']>;
-};
-
-/** Checks that a field has at least one indexed value (exists query) */
-export type FieldInput = {
-  /** The indexed field that must have a value */
-  field: SearchField;
-};
-
-/** A field+value pair for term/phrase/regex style leaf queries */
-export type FieldTextInput = {
-  /** The indexed field to match against */
-  field: SearchField;
-  /** The value to match */
-  value: Scalars['String']['input'];
-};
-
-/** A field+values pair for terms_any / terms_all leaf queries */
-export type FieldTextListInput = {
-  /** The indexed field to match against */
-  field: SearchField;
-  /** The list of values to match */
-  values: Array<Scalars['String']['input']>;
 };
 
 /** A field type in the framework */
@@ -7082,14 +8294,19 @@ export type FieldTypeImplementation = {
 
 /** The type of relation between a field and its type */
 export enum FieldTypeRelationType {
+  /** The field type is a custom type */
   Custom = 'CUSTOM',
+  /** The field type is an interface type */
   Interface = 'INTERFACE',
+  /** The field type is a primitive type (string, number, boolean, etc.) */
   Primitive = 'PRIMITIVE'
 }
 
 /** The state of a field type */
 export enum FieldTypeState {
+  /** The field type is active and can be used */
   Active = 'ACTIVE',
+  /** The field type has been deleted and cannot be used */
   Deleted = 'DELETED'
 }
 
@@ -7142,12 +8359,19 @@ export type FileAssetValue = {
 
 /** The type of a link value stored inside a file column */
 export enum FileColumnValue {
+  /** Asset file */
   Asset = 'asset',
+  /** Box file */
   Box = 'box',
+  /** Doc file */
   Doc = 'doc',
+  /** Dropbox file */
   Dropbox = 'dropbox',
+  /** Google Drive file */
   GoogleDrive = 'google_drive',
+  /** Generic link file */
   Link = 'link',
+  /** OneDrive file */
   Onedrive = 'onedrive'
 }
 
@@ -7202,10 +8426,15 @@ export type FileLinkValue = {
 
 /** The type of a link value stored inside a file column */
 export enum FileLinkValueKind {
+  /** Box file */
   Box = 'box',
+  /** Dropbox file */
   Dropbox = 'dropbox',
+  /** Google Drive file */
   GoogleDrive = 'google_drive',
+  /** Generic link file */
   Link = 'link',
+  /** OneDrive file */
   Onedrive = 'onedrive'
 }
 
@@ -7244,13 +8473,17 @@ export type FileValueItem = FileAssetInvalidValue | FileAssetValue | FileDocValu
 
 /** Determines how the building block types list is interpreted. */
 export enum FilterMode {
+  /** Only create the specified building block types. */
   AllowOnly = 'ALLOW_ONLY',
+  /** Create all building block types except those specified. */
   Exclude = 'EXCLUDE'
 }
 
 /** The first day of work week */
 export enum FirstDayOfTheWeek {
+  /** Monday */
   Monday = 'monday',
+  /** Sunday */
   Sunday = 'sunday'
 }
 
@@ -7285,39 +8518,65 @@ export type Folder = {
 
 /** One value out of a list of valid folder colors */
 export enum FolderColor {
+  /** aquamarine */
   Aquamarine = 'AQUAMARINE',
+  /** bright-blue */
   BrightBlue = 'BRIGHT_BLUE',
+  /** bright-green */
   BrightGreen = 'BRIGHT_GREEN',
+  /** chili-blue */
   ChiliBlue = 'CHILI_BLUE',
+  /** dark-orange */
   DarkOrange = 'DARK_ORANGE',
+  /** dark_purple */
   DarkPurple = 'DARK_PURPLE',
+  /** dark-red */
   DarkRed = 'DARK_RED',
+  /** done-green */
   DoneGreen = 'DONE_GREEN',
+  /** indigo */
   Indigo = 'INDIGO',
+  /** lipstick */
   Lipstick = 'LIPSTICK',
+  /** No color */
   Null = 'NULL',
+  /** purple */
   Purple = 'PURPLE',
+  /** sofia_pink */
   SofiaPink = 'SOFIA_PINK',
+  /** stuck-red */
   StuckRed = 'STUCK_RED',
+  /** sunset */
   Sunset = 'SUNSET',
+  /** working_orange */
   WorkingOrange = 'WORKING_ORANGE'
 }
 
 /** One value out of a list of valid folder custom icons */
 export enum FolderCustomIcon {
+  /** Folder */
   Folder = 'FOLDER',
+  /** MoreBelow */
   Morebelow = 'MOREBELOW',
+  /** MoreBelowFilled */
   Morebelowfilled = 'MOREBELOWFILLED',
+  /** No custom icon */
   Null = 'NULL',
+  /** Work */
   Work = 'WORK'
 }
 
 /** One value out of a list of valid folder font weights */
 export enum FolderFontWeight {
+  /** font-weight-bold */
   FontWeightBold = 'FONT_WEIGHT_BOLD',
+  /** font-weight-light */
   FontWeightLight = 'FONT_WEIGHT_LIGHT',
+  /** font-weight-normal */
   FontWeightNormal = 'FONT_WEIGHT_NORMAL',
+  /** font-weight-very-light */
   FontWeightVeryLight = 'FONT_WEIGHT_VERY_LIGHT',
+  /** No font weight */
   Null = 'NULL'
 }
 
@@ -7630,7 +8889,9 @@ export type FormLayoutInput = {
 
 /** The layout style of the form (Card or Flat). */
 export enum FormLayoutStyle {
+  /** Card layout renders the form inside a bordered card with rounded corners and shadow, where content scrolls within the card. */
   Card = 'CARD',
+  /** Flat layout renders the form edge-to-edge across the full viewport, where the entire page scrolls. */
   Flat = 'FLAT'
 }
 
@@ -7662,9 +8923,13 @@ export enum FormLogoPosition {
 
 /** Available logo sizes for form branding */
 export enum FormLogoSize {
+  /** Extra large logo size for maximum form branding impact, height of 96px, width will be scaled to maintain aspect ratio */
   ExtraLarge = 'ExtraLarge',
+  /** Large logo size for prominent form branding, height of 72px, width will be scaled to maintain aspect ratio */
   Large = 'Large',
+  /** Medium logo size for standard form branding, height of 40px, width will be scaled to maintain aspect ratio */
   Medium = 'Medium',
+  /** Small logo size for compact form branding, height of 32px, width will be scaled to maintain aspect ratio */
   Small = 'Small'
 }
 
@@ -7875,29 +9140,53 @@ export type FormQuestionSettingsInput = {
 
 /** The type of the question (ex. text, number, MultiSelect etc.) */
 export enum FormQuestionType {
+  /** A yes/no checkbox question. */
   Boolean = 'Boolean',
+  /** A question that links to items on a connected board. Board configuration must be done through the column settings. */
   ConnectedBoards = 'ConnectedBoards',
+  /** A country selection question with a searchable dropdown. */
   Country = 'Country',
+  /** A text-only display block for adding instructions or context to a form. */
   DisplayText = 'DISPLAY_TEXT',
+  /** A date picker question with optional time selection. */
   Date = 'Date',
+  /** A date range question allowing start and end date selection. */
   DateRange = 'DateRange',
+  /** An email address input question with format validation. */
   Email = 'Email',
+  /** A file upload question for attachments. */
   File = 'File',
+  /** A time input question for selecting an hour and minute. */
   Hour = 'HOUR',
+  /** A URL/link input question with optional format validation. */
   Link = 'Link',
+  /** A location/address input question with optional geolocation autofill. */
   Location = 'Location',
+  /** A multi-line text input question for longer responses. */
   LongText = 'LongText',
+  /** A multiple-choice question allowing several selections. */
   MultiSelect = 'MultiSelect',
+  /** A name input question mapped to the item name column on the board. */
   Name = 'Name',
+  /** A numeric input question. */
   Number = 'Number',
+  /** A page block that groups questions into a single page. */
   PageBlock = 'PAGE_BLOCK',
+  /** A people picker question for selecting monday.com users. */
   People = 'People',
+  /** A phone number input question with optional country prefix. */
   Phone = 'Phone',
+  /** A rating question with a configurable scale. */
   Rating = 'Rating',
+  /** A single-line text input question. */
   ShortText = 'ShortText',
+  /** A signature capture question for collecting drawn or uploaded signatures. */
   Signature = 'Signature',
+  /** A single-choice question allowing one selection. */
   SingleSelect = 'SingleSelect',
+  /** A subitems question that creates sub-items on the board. Sub-items columns must be configured through the board. */
   Subitems = 'Subitems',
+  /** An updates/comments question mapped to the item updates feed. */
   Updates = 'Updates'
 }
 
@@ -8038,20 +9327,6 @@ export type FormulaValue = ColumnValue & {
   value?: Maybe<Scalars['JSON']['output']>;
 };
 
-/** Fuzzy term query with edit-distance tolerance */
-export type FuzzyInput = {
-  /** Maximum edit distance (Levenshtein) */
-  distance: Scalars['Int']['input'];
-  /** The indexed field to match against */
-  field: SearchField;
-  /** Length of the common prefix that is not fuzzified */
-  prefix_len?: InputMaybe<Scalars['Int']['input']>;
-  /** Count transpositions as a single edit */
-  transpositions?: InputMaybe<Scalars['Boolean']['input']>;
-  /** The value to fuzzily match */
-  value: Scalars['String']['input'];
-};
-
 /** Result of generating a marketplace template for a vibe app */
 export type GenerateMarketplaceTemplateResult = {
   __typename?: 'GenerateMarketplaceTemplateResult';
@@ -8140,8 +9415,11 @@ export type GetSnapshotsQueryResults = {
 
 /** The governance risk level of an agent. */
 export enum GovernanceRisk {
+  /** High risk — sensitive data access combined with high-reach tools. */
   High = 'High',
+  /** Low risk — no sensitive data access and low-reach tools. */
   Low = 'Low',
+  /** Medium risk — moderate combined score. */
   Medium = 'Medium'
 }
 
@@ -8218,9 +9496,13 @@ export type GraphqlHierarchyObjectItem = {
 
 /** Represents a monday object. */
 export enum GraphqlMondayObject {
+  /** A monday.com board */
   Board = 'Board',
+  /** Aggregates data from one or more boards. */
   Dashboard = 'Dashboard',
+  /** A monday.com folder */
   Folder = 'Folder',
+  /** A monday.com workspace */
   Workspace = 'Workspace'
 }
 
@@ -8259,10 +9541,15 @@ export type GroupItems_PageArgs = {
 
 /** The group attributes available. */
 export enum GroupAttributes {
+  /** Group color (one of the supported colors, check the API documentation). */
   Color = 'color',
+  /** The group's position in the board. Deprecated! - replaced with relative position */
   Position = 'position',
+  /** The group's relative position after another group in the board. */
   RelativePositionAfter = 'relative_position_after',
+  /** The group's relative position before another group in the board. */
   RelativePositionBefore = 'relative_position_before',
+  /** Group title. */
   Title = 'title'
 }
 
@@ -8282,10 +9569,15 @@ export type GroupByConditionInput = {
 
 /** Resource attribute allowed for grouping in the utilization report. */
 export enum GroupByResourceAttribute {
+  /** Job role. */
   JobRole = 'JOB_ROLE',
+  /** Location. */
   Location = 'LOCATION',
+  /** Resource manager. */
   ResourceManager = 'RESOURCE_MANAGER',
+  /** Skills. */
   Skills = 'SKILLS',
+  /** Teams. */
   Teams = 'TEAMS'
 }
 
@@ -8324,7 +9616,9 @@ export type GroupInput = {
 
 /** The operator for the group */
 export enum GroupOperator {
+  /** All conditions in the group must be met */
   And = 'AND',
+  /** At least one condition in the group must be met */
   Or = 'OR'
 }
 
@@ -8350,7 +9644,9 @@ export type GroupValue = ColumnValue & {
 
 /** CSV header row format. */
 export enum HeaderFormat {
+  /** Use column IDs as headers (round-trippable with mdb-data import). */
   ColumnId = 'COLUMN_ID',
+  /** Use column titles as headers (human-readable). */
   Title = 'TITLE'
 }
 
@@ -8373,16 +9669,23 @@ export type HierarchyObjectIdInputType = {
 
 /** The reason the queryable historical range starts later than the earliest requested timestamp. */
 export enum HistoricalRangeLimitReason {
+  /** Data capture for this board began after the earliest requested timestamp. */
   DataLimit = 'DATA_LIMIT',
+  /** The earliest requested timestamp exceeds the account plan's maximum history window. */
   PlanLimit = 'PLAN_LIMIT'
 }
 
 /** Types of entities that can host an AI app instance */
 export enum HostEntityType {
+  /** A monday.com board hosting the app instance */
   Board = 'BOARD',
+  /** A monday.com board view hosting the app instance */
   BoardView = 'BOARD_VIEW',
+  /** A monday.com dashboard hosting the app instance */
   Dashboard = 'DASHBOARD',
+  /** A monday.com item hosting the app instance */
   Item = 'ITEM',
+  /** A monday.com workspace hosting the app instance */
   Workspace = 'WORKSPACE'
 }
 
@@ -8395,8 +9698,11 @@ export type HostTargetInput = {
 };
 
 export enum HostType {
+  /** Workflow hosted in the account */
   AccountLevel = 'ACCOUNT_LEVEL',
+  /** Workflow hosted under an app feature object */
   AppFeatureObject = 'APP_FEATURE_OBJECT',
+  /** Workflow hosted in a board */
   Board = 'BOARD'
 }
 
@@ -8679,6 +9985,8 @@ export type Intelligence = {
   relevant_docs?: Maybe<Array<RelevantDoc>>;
   /** Top related users ranked by relevance (multi-signal frequency + recency). */
   relevant_people?: Maybe<Array<RelevantPerson>>;
+  /** Top workspaces ranked by relevance (activity on their boards and docs, plus favorites). */
+  relevant_workspaces?: Maybe<Array<RelevantWorkspace>>;
 };
 
 
@@ -8703,6 +10011,12 @@ export type IntelligenceRelevant_DocsArgs = {
 
 /** Intelligence data. */
 export type IntelligenceRelevant_PeopleArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Intelligence data. */
+export type IntelligenceRelevant_WorkspacesArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
@@ -8745,18 +10059,31 @@ export type InternalCallbackInput = {
 
 /** The method by which a user was added to the account. */
 export enum InvitationMethod {
+  /** Created as an agent user. */
   AgentUserCreation = 'AGENT_USER_CREATION',
+  /** Created as an API user. */
   ApiUserCreation = 'API_USER_CREATION',
+  /** Added via authorized domain. */
   AuthDomain = 'AUTH_DOMAIN',
+  /** Added via account consolidation. */
   Consolidation = 'CONSOLIDATION',
+  /** First user who created the account. */
   FirstUser = 'FIRST_USER',
+  /** Created by internal flow. */
   InternalCreation = 'INTERNAL_CREATION',
+  /** Provisioned via SCIM. */
   Scim = 'SCIM',
+  /** Added via service portal authorized domain. */
   ServicePortalAuthDomain = 'SERVICE_PORTAL_AUTH_DOMAIN',
+  /** Invited to monday service portal by another user. */
   ServicePortalUserInvitation = 'SERVICE_PORTAL_USER_INVITATION',
+  /** Added via single sign-on. */
   Sso = 'SSO',
+  /** Created via system creation flow. */
   SystemCreation = 'SYSTEM_CREATION',
+  /** Unknown invitation method. */
   Unknown = 'UNKNOWN',
+  /** Invited by another user. */
   User = 'USER'
 }
 
@@ -8878,17 +10205,17 @@ export type ItemDependency = {
   predecessors?: Maybe<Array<DependencyEdge>>;
 };
 
-/** An item description. */
+/** An item's description, resolved by the monolith from the item id. */
 export type ItemDescription = {
   __typename?: 'ItemDescription';
   /** The item's content blocks */
   blocks?: Maybe<Array<Maybe<DocumentBlock>>>;
-  /** The item's unique identifier. */
+  /** The description's unique identifier. */
   id?: Maybe<Scalars['ID']['output']>;
 };
 
 
-/** An item description. */
+/** An item's description, resolved by the monolith from the item id. */
 export type ItemDescriptionBlocksArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
@@ -8913,7 +10240,9 @@ export type ItemIdValue = ColumnValue & {
 
 /** Item metadata that can be added as extra columns in CSV exports. */
 export enum ItemMetadataField {
+  /** The item's `created_at`. */
   CreatedAt = 'CREATED_AT',
+  /** The item's `updated_at`. Equal to `created_at` until the item is first edited. */
   LastUpdatedAt = 'LAST_UPDATED_AT'
 }
 
@@ -8940,6 +10269,8 @@ export type ItemResult = {
   creator?: Maybe<User>;
   /** The user ID of the item creator */
   creator_id?: Maybe<Scalars['ID']['output']>;
+  /** The item's description. */
+  description?: Maybe<ItemDescription>;
   /** The group this item belongs to (id, title, color). */
   group?: Maybe<ItemsPageGroup>;
   /** The unique identifier of the item */
@@ -8983,15 +10314,25 @@ export type ItemsHistoryFilterGroupInput = {
 
 /** Comparison operators for filtering items in items history queries. */
 export enum ItemsHistoryFilterOperator {
+  /** Match any of the specified values (OR). */
   AnyOf = 'ANY_OF',
+  /** Text ends with the specified substring. */
   EndsWith = 'ENDS_WITH',
+  /** Value is greater than the specified value. */
   GreaterThan = 'GREATER_THAN',
+  /** Value is greater than or equal to the specified value. */
   GreaterThanOrEquals = 'GREATER_THAN_OR_EQUALS',
+  /** Value is empty or null. */
   IsEmpty = 'IS_EMPTY',
+  /** Value is not empty or null. */
   IsNotEmpty = 'IS_NOT_EMPTY',
+  /** Value is less than the specified value. */
   LowerThan = 'LOWER_THAN',
+  /** Value is less than or equal to the specified value. */
   LowerThanOrEqual = 'LOWER_THAN_OR_EQUAL',
+  /** Match none of the specified values. */
   NotAnyOf = 'NOT_ANY_OF',
+  /** Text starts with the specified substring. */
   StartsWith = 'STARTS_WITH'
 }
 
@@ -9009,6 +10350,7 @@ export type ItemsHistoryFilterRuleInput = {
 
 /** The source type for the items history query. */
 export enum ItemsHistoryFromElement {
+  /** Query historical snapshots of board/table data at a specific date. */
   Table = 'TABLE'
 }
 
@@ -9022,22 +10364,39 @@ export type ItemsHistoryFromInput = {
 
 /** The function to apply to a column value. */
 export enum ItemsHistoryFunction {
+  /** Calculate the average of numeric values. */
   Average = 'AVERAGE',
+  /** Get the hex color value. */
   Color = 'COLOR',
+  /** Count all values. */
   Count = 'COUNT',
+  /** Count distinct values. */
   CountDistinct = 'COUNT_DISTINCT',
+  /** Count items. */
   CountItems = 'COUNT_ITEMS',
+  /** Get the first value. */
   First = 'FIRST',
+  /** Get the ID/index value. */
   Id = 'ID',
+  /** Check if the status is a done state. */
   IsDone = 'IS_DONE',
+  /** Get the label text. */
   Label = 'LABEL',
+  /** Get the length of a value. */
   Length = 'LENGTH',
+  /** Convert text to lowercase. */
   Lower = 'LOWER',
+  /** Get the maximum value. */
   Max = 'MAX',
+  /** Calculate the median. */
   Median = 'MEDIAN',
+  /** Get the minimum value. */
   Min = 'MIN',
+  /** Calculate the sum of numeric values. */
   Sum = 'SUM',
+  /** Trim whitespace from a text value. */
   Trim = 'TRIM',
+  /** Convert text to uppercase. */
   Upper = 'UPPER'
 }
 
@@ -9101,7 +10460,9 @@ export type ItemsHistoryQueryInput = {
 
 /** Logical operators for combining filter rules. */
 export enum ItemsHistoryQueryOperator {
+  /** All rules must match (AND logic). */
   And = 'AND',
+  /** Any rule can match (OR logic). */
   Or = 'OR'
 }
 
@@ -9158,13 +10519,17 @@ export type ItemsHistorySelectFunctionInput = {
 
 /** Whether this select element is a raw column or a function. */
 export enum ItemsHistorySelectKind {
+  /** Select a raw column value. */
   Column = 'COLUMN',
+  /** Apply a function to column value(s). */
   Function = 'FUNCTION'
 }
 
 /** Sort direction for ordering items history results. */
 export enum ItemsHistorySortDirection {
+  /** Sort in ascending order (A-Z, 0-9). */
   Asc = 'ASC',
+  /** Sort in descending order (Z-A, 9-0). */
   Desc = 'DESC'
 }
 
@@ -9208,7 +10573,9 @@ export type ItemsJobStatus = {
 
 /** The direction to order the items by */
 export enum ItemsOrderByDirection {
+  /** Ascending order */
   Asc = 'asc',
+  /** Descending order */
   Desc = 'desc'
 }
 
@@ -9341,11 +10708,17 @@ export type ItemsPageCalculatedCapability = {
 
 /** Aggregation function used by a calculated (rollup) column on a multi-level board. */
 export enum ItemsPageCalculatedFunction {
+  /** Count of items per status key (status columns). */
   CountKeys = 'COUNT_KEYS',
+  /** Maximum value. */
   Max = 'MAX',
+  /** Minimum value. */
   Min = 'MIN',
+  /** Min/max range (timeline columns). */
   MinMax = 'MIN_MAX',
+  /** Calculation disabled (capability metadata retained). */
   None = 'NONE',
+  /** Sum of values (numbers columns). */
   Sum = 'SUM'
 }
 
@@ -9423,48 +10796,87 @@ export type ItemsPageColumnCapabilities = {
 
 /** Column capability flags accepted by the column_values capabilities filter. */
 export enum ItemsPageColumnCapability {
+  /** Capability to show column's calculated/rollup value. */
   Calculated = 'CALCULATED',
+  /** Capability to mark column as hidden. */
   Visibility = 'VISIBILITY'
 }
 
 /** Column type values accepted by the column_values types filter. */
 export enum ItemsPageColumnTypeFilter {
+  /** The auto_number column type. */
   AutoNumber = 'auto_number',
+  /** The board_relation column type. */
   BoardRelation = 'board_relation',
+  /** The button column type. */
   Button = 'button',
+  /** The checkbox column type. */
   Checkbox = 'checkbox',
+  /** The color_picker column type. */
   ColorPicker = 'color_picker',
+  /** The country column type. */
   Country = 'country',
+  /** The creation_log column type. */
   CreationLog = 'creation_log',
+  /** The date column type. */
   Date = 'date',
+  /** The dependency column type. */
   Dependency = 'dependency',
+  /** The direct_doc column type. */
   DirectDoc = 'direct_doc',
+  /** The doc column type. */
   Doc = 'doc',
+  /** The dropdown column type. */
   Dropdown = 'dropdown',
+  /** The email column type. */
   Email = 'email',
+  /** The file column type. */
   File = 'file',
+  /** The formula column type. */
   Formula = 'formula',
+  /** The hour column type. */
   Hour = 'hour',
+  /** The item_id column type. */
   ItemId = 'item_id',
+  /** The last_updated column type. */
   LastUpdated = 'last_updated',
+  /** The link column type. */
   Link = 'link',
+  /** The location column type. */
   Location = 'location',
+  /** The long_text column type. */
   LongText = 'long_text',
+  /** The mirror column type. */
   Mirror = 'mirror',
+  /** The numbers column type. */
   Numbers = 'numbers',
+  /** The people column type. */
   People = 'people',
+  /** The phone column type. */
   Phone = 'phone',
+  /** The progress column type. */
   Progress = 'progress',
+  /** The rating column type. */
   Rating = 'rating',
+  /** The status column type. */
   Status = 'status',
+  /** The subtasks column type. */
   Subtasks = 'subtasks',
+  /** The tags column type. */
   Tags = 'tags',
+  /** The text column type. */
   Text = 'text',
+  /** The time_tracking column type. */
   TimeTracking = 'time_tracking',
+  /** The timeline column type. */
   Timeline = 'timeline',
+  /** The unsupported column type. */
   Unsupported = 'unsupported',
+  /** The vote column type. */
   Vote = 'vote',
+  /** The week column type. */
   Week = 'week',
+  /** The world_clock column type. */
   WorldClock = 'world_clock'
 }
 
@@ -9768,10 +11180,15 @@ export type ItemsPageFileLinkValue = {
 
 /** The type of an external link stored inside a file column. */
 export enum ItemsPageFileLinkValueKind {
+  /** Box file */
   Box = 'box',
+  /** Dropbox file */
   Dropbox = 'dropbox',
+  /** Google Drive file */
   GoogleDrive = 'google_drive',
+  /** Generic link file */
   Link = 'link',
+  /** OneDrive file */
   Onedrive = 'onedrive'
 }
 
@@ -10543,7 +11960,9 @@ export type ItemsQueryGroup = {
 
 /** The condition between the query rules */
 export enum ItemsQueryOperator {
+  /** Logical AND */
   And = 'and',
+  /** Logical OR */
   Or = 'or'
 }
 
@@ -10564,21 +11983,37 @@ export type ItemsQueryRule = {
 
 /** The operator to use for the value comparison */
 export enum ItemsQueryRuleOperator {
+  /** Any of the values */
   AnyOf = 'any_of',
+  /** Between the two values */
   Between = 'between',
+  /** Contains all the terms */
   ContainsTerms = 'contains_terms',
+  /** Contains the text */
   ContainsText = 'contains_text',
+  /** Ends with the value */
   EndsWith = 'ends_with',
+  /** Greater than the value */
   GreaterThan = 'greater_than',
+  /** Greater than or equal to the value */
   GreaterThanOrEquals = 'greater_than_or_equals',
+  /** Empty value */
   IsEmpty = 'is_empty',
+  /** Not empty value */
   IsNotEmpty = 'is_not_empty',
+  /** Lower than the value */
   LowerThan = 'lower_than',
+  /** Lower than or equal to the value */
   LowerThanOrEqual = 'lower_than_or_equal',
+  /** None of the values */
   NotAnyOf = 'not_any_of',
+  /** Does not contain the text */
   NotContainsText = 'not_contains_text',
+  /** Starts with the value */
   StartsWith = 'starts_with',
+  /** Within the last */
   WithinTheLast = 'within_the_last',
+  /** Within the next */
   WithinTheNext = 'within_the_next'
 }
 
@@ -10596,11 +12031,17 @@ export type ItemsResponse = {
 
 /** Status of an async job */
 export enum JobState {
+  /** Job was cancelled */
   Cancelled = 'CANCELLED',
+  /** Job completed successfully */
   Completed = 'COMPLETED',
+  /** Job expired before completion */
   Expired = 'EXPIRED',
+  /** Job failed */
   Failed = 'FAILED',
+  /** Job is queued but not yet started */
   Pending = 'PENDING',
+  /** Job is actively executing */
   Running = 'RUNNING'
 }
 
@@ -10609,8 +12050,11 @@ export type JobStatus = ItemsJobStatus;
 
 /** Kind of assignee */
 export enum Kind {
+  /** Represents an AI agent */
   Agent = 'agent',
+  /** Represents a person */
   Person = 'person',
+  /** Represents a team */
   Team = 'team'
 }
 
@@ -10625,35 +12069,61 @@ export type KnowledgeBaseAnswer = {
 
 /** Available LLM models for code generation */
 export enum LlmModelInput {
+  /** Anthropic Claude 4.5 Sonnet */
   Claude_4_5Sonnet = 'CLAUDE_4_5_SONNET',
+  /** Anthropic Claude 4.6 Sonnet */
   Claude_4_6Sonnet = 'CLAUDE_4_6_SONNET',
+  /** Anthropic Claude Sonnet 5.5 */
+  Claude_5_5Sonnet = 'CLAUDE_5_5_SONNET',
+  /** Anthropic Claude Sonnet 5 */
   Claude_5Sonnet = 'CLAUDE_5_SONNET',
+  /** Anthropic Claude Haiku 4.5 */
   ClaudeHaiku_4_5 = 'CLAUDE_HAIKU_4_5',
+  /** Anthropic Claude Haiku 5.5 */
+  ClaudeHaiku_5_5 = 'CLAUDE_HAIKU_5_5',
+  /** Anthropic Claude Opus 4.6 */
   ClaudeOpus_4_6 = 'CLAUDE_OPUS_4_6',
+  /** Anthropic Claude Opus 5 */
   ClaudeOpus_5 = 'CLAUDE_OPUS_5',
+  /** Anthropic Claude Opus 5.5 */
   ClaudeOpus_5_5 = 'CLAUDE_OPUS_5_5',
+  /** Google Gemini 3.1 Flash Lite */
   Gemini_3_1FlashLite = 'GEMINI_3_1_FLASH_LITE',
+  /** Google Gemini 3.5 Flash */
   Gemini_3_5Flash = 'GEMINI_3_5_FLASH',
+  /** Google Gemini 3.5 Flash Lite */
   Gemini_3_5FlashLite = 'GEMINI_3_5_FLASH_LITE',
+  /** Google Gemini 3.6 Flash */
   Gemini_3_6Flash = 'GEMINI_3_6_FLASH',
+  /** Google Gemini 3.7 Flash */
   Gemini_3_7Flash = 'GEMINI_3_7_FLASH',
+  /** Google Gemini 3.8 Flash */
   Gemini_3_8Flash = 'GEMINI_3_8_FLASH',
+  /** Google Gemini 4 Argon */
   Gemini_4Argon = 'GEMINI_4_ARGON',
+  /** OpenAI GPT-6.1 Sol */
   Gpt_6_1Sol = 'GPT_6_1_SOL'
 }
 
 /** The vendor family a model belongs to, as restricted by account AI policies */
 export enum LlmModelVendor {
+  /** Anthropic Claude models */
   Anthropic = 'ANTHROPIC',
+  /** Google Gemini models */
   Google = 'GOOGLE',
+  /** OpenAI GPT models */
   Openai = 'OPENAI',
+  /** Open-source models served by the AI Gateway */
   Opensource = 'OPENSOURCE'
 }
 
 /** How much the code-generation model reasons before it answers */
 export enum LlmThinkingEffort {
+  /** Most reasoning; slowest responses */
   High = 'HIGH',
+  /** Least reasoning; fastest responses */
   Low = 'LOW',
+  /** Balanced reasoning and speed */
   Medium = 'MEDIUM'
 }
 
@@ -10822,8 +12292,11 @@ export type ListBlockInput = {
 
 /** Types of lists in hierarchyMS */
 export enum ListType {
+  /** A customized list with specific settings */
   CustomizedList = 'CustomizedList',
+  /** A personal list owned by a user */
   PersonalList = 'PersonalList',
+  /** A workspace-level list */
   Workspace = 'Workspace'
 }
 
@@ -10997,10 +12470,15 @@ export type LookupNamespaceBoardsArgs = {
 
 /** The Monday.com product kind for the magic solution. */
 export enum MagicProductKind {
+  /** Core work management product (default). */
   Core = 'CORE',
+  /** CRM product. */
   Crm = 'CRM',
+  /** Marketing product. */
   Marketing = 'MARKETING',
+  /** Service product. */
   Service = 'SERVICE',
+  /** Dev product. */
   Software = 'SOFTWARE'
 }
 
@@ -11055,6 +12533,13 @@ export enum ManagedColumnTypes {
   Status = 'status'
 }
 
+/** Result of recording that the caller has read a conversation */
+export type MarkAgentConversationReadResult = {
+  __typename?: 'MarkAgentConversationReadResult';
+  /** The conversation whose read position was recorded */
+  conversation_id?: Maybe<Scalars['ID']['output']>;
+};
+
 export type MarketplaceAppDiscount = {
   __typename?: 'MarketplaceAppDiscount';
   /** The ID of an account */
@@ -11089,6 +12574,8 @@ export type Meeting = {
   access_type: MeetingAccess;
   /** The action items from the meeting. */
   action_items?: Maybe<Array<ActionItem>>;
+  /** Speaker and turn-taking statistics computed from the transcript. Null when the meeting has no transcript or they have not been computed yet. */
+  dynamics?: Maybe<MeetingDynamics>;
   /** The end time of the meeting. */
   end_time: Scalars['Date']['output'];
   /** A concise AI-generated gist of the meeting. */
@@ -11101,10 +12588,14 @@ export type Meeting = {
   meeting_link: Scalars['String']['output'];
   /** The list of participants in the meeting. */
   participants: Array<Participant>;
+  /** A temporary download link for the meeting recording: video for bot and desktop recordings, audio for mobile recordings and phone calls. Null when the meeting has no recording. Only a limited number of recordings can be requested per query. */
+  recording?: Maybe<MeetingRecording>;
   /** The duration of the recording in seconds. */
   recording_duration?: Maybe<Scalars['Int']['output']>;
   /** The search relevance score. Set for meeting (gist) search; null for content search and the list path. */
   relevance?: Maybe<Scalars['Float']['output']>;
+  /** The id of the recurring calendar series this meeting belongs to. Null for one-off meetings and meetings without a calendar event. */
+  series_id?: Maybe<Scalars['ID']['output']>;
   /** The start time of the meeting. */
   start_time: Scalars['Date']['output'];
   /** The AI-generated summary of the meeting. */
@@ -11115,22 +12606,48 @@ export type Meeting = {
   topics?: Maybe<Array<Topic>>;
   /** The transcript entries for the meeting. */
   transcript?: Maybe<Array<TranscriptEntry>>;
+  /** The workspaces this meeting is linked to that the current user can open. */
+  workspaces: Array<MeetingWorkspace>;
 };
 
 /** The type of access the current user has to a meeting. */
 export enum MeetingAccess {
+  /** The user was a participant in the meeting or invited the bot. */
   Own = 'OWN',
+  /** The meeting was shared with the account. */
   SharedWithAccount = 'SHARED_WITH_ACCOUNT',
+  /** The meeting was shared directly with the user or their team. */
   SharedWithMe = 'SHARED_WITH_ME'
 }
 
 /** Filter for the access level of meetings in the query. */
 export enum MeetingAccessFilter {
+  /** All meetings the user has access to (own, shared with user, and shared with account). */
   All = 'ALL',
+  /** The user was a participant in the meeting or invited the bot. */
   Own = 'OWN',
+  /** The meeting was shared with the account. */
   SharedWithAccount = 'SHARED_WITH_ACCOUNT',
+  /** The meeting was shared directly with the user or their team. */
   SharedWithMe = 'SHARED_WITH_ME'
 }
+
+/** Speaker and turn-taking statistics computed from the meeting transcript. */
+export type MeetingDynamics = {
+  __typename?: 'MeetingDynamics';
+  /** Number of times a speaker started before the previous one finished. */
+  interruption_count: Scalars['Int']['output'];
+  /** The longest uninterrupted stretch by a single speaker. */
+  longest_monologue?: Maybe<MeetingMonologue>;
+  /** Calendar attendees who did not speak. */
+  silent_attendees: Array<Scalars['String']['output']>;
+  /** Per-speaker talk time, sorted by talk time descending. */
+  speaker_stats: Array<MeetingSpeakerStat>;
+  /** Total seconds of speech across all speakers. */
+  total_talk_time_seconds: Scalars['Int']['output'];
+  /** How often the speaker changed, per minute of conversation. */
+  turn_switches_per_minute: Scalars['Float']['output'];
+};
 
 /** A relevant slice of meeting content matched by a content search. */
 export type MeetingMatch = {
@@ -11147,19 +12664,59 @@ export type MeetingMatch = {
   type: MeetingSearchArea;
 };
 
+/** Selects the meeting fields to rank on. Set a field to true to match on it. At least one field must be true; omit match_by to search all indexed fields. */
+export type MeetingMatchByInput = {
+  /** AI-generated one-sentence meeting gist. */
+  gist?: InputMaybe<Scalars['Boolean']['input']>;
+  /** AI-generated meeting summary. */
+  summary?: InputMaybe<Scalars['Boolean']['input']>;
+  /** Meeting title. */
+  title?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** The longest uninterrupted stretch one speaker talked. */
+export type MeetingMonologue = {
+  __typename?: 'MeetingMonologue';
+  /** Length of the monologue in seconds. */
+  duration_seconds: Scalars['Int']['output'];
+  /** The speaker label as it appears in the transcript. */
+  speaker: Scalars['String']['output'];
+  /** Offset into the recording, in seconds, where the monologue starts. */
+  start_time_seconds: Scalars['Int']['output'];
+};
+
+/** A temporary download link for a meeting recording. */
+export type MeetingRecording = {
+  __typename?: 'MeetingRecording';
+  /** The latest time the link works; it can stop working earlier. Null when the expiry is unknown. */
+  expires_at?: Maybe<Scalars['Date']['output']>;
+  /** Whether the recording is video or audio only. */
+  media_type: RecordingMediaType;
+  /** A temporary signed download link. Anyone with the link can download the file until it expires, so do not share or log it. Download it with an HTTP GET; request a new link if it returns 403 or has expired. */
+  url: Scalars['String']['output'];
+};
+
 /** Controls which meetings are returned based on ownership and sharing scope. */
 export enum MeetingSearchAccess {
+  /** All accessible meetings (default). */
   All = 'ALL',
+  /** Only meetings owned by the caller. */
   Own = 'OWN',
+  /** Meetings shared with the caller's account. */
   SharedWithAccount = 'SHARED_WITH_ACCOUNT',
+  /** Meetings shared directly with the caller. */
   SharedWithMe = 'SHARED_WITH_ME'
 }
 
 /** An area of meeting content to search in. */
 export enum MeetingSearchArea {
+  /** An action item from the meeting. */
   ActionItem = 'ACTION_ITEM',
+  /** A section of the meeting summary. */
   Summary = 'SUMMARY',
+  /** A discussed topic. */
   Topic = 'TOPIC',
+  /** A verbatim segment of the transcript. */
   Transcript = 'TRANSCRIPT'
 }
 
@@ -11177,6 +12734,28 @@ export type MeetingSearchFieldsInput = {
   talking_points?: InputMaybe<Scalars['Boolean']['input']>;
   /** Meeting title. */
   title?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** How much one transcript speaker talked in the meeting. */
+export type MeetingSpeakerStat = {
+  __typename?: 'MeetingSpeakerStat';
+  /** Number of questions this speaker asked. */
+  questions_asked: Scalars['Int']['output'];
+  /** The speaker label as it appears in the transcript. */
+  speaker: Scalars['String']['output'];
+  /** This speaker's share of the meeting's total talk time, 0-100. */
+  talk_time_percentage: Scalars['Float']['output'];
+  /** Total seconds this speaker talked, rounded. */
+  talk_time_seconds: Scalars['Int']['output'];
+};
+
+/** A workspace the meeting is linked to. */
+export type MeetingWorkspace = {
+  __typename?: 'MeetingWorkspace';
+  /** The workspace id. */
+  id: Scalars['ID']['output'];
+  /** The workspace name. */
+  name: Scalars['String']['output'];
 };
 
 /** Date range filter for meetings based on start time. */
@@ -11197,9 +12776,9 @@ export type MeetingsFilterInput = {
   search?: InputMaybe<Scalars['String']['input']>;
   /** Areas of meeting content to search in (e.g. [TOPIC, SUMMARY]). When provided alongside search, runs content search and returns matched slices per meeting. Omit for meeting-level discovery, which unions a title rank and a gist rank (top-k each). */
   search_in?: InputMaybe<Array<MeetingSearchArea>>;
-  /** Only include meetings starting at or after this time. Applies to ranked search only. */
+  /** Only include meetings starting at or after this time. */
   start_time_from?: InputMaybe<Scalars['Date']['input']>;
-  /** Only include meetings starting at or before this time. Applies to ranked search only. */
+  /** Only include meetings starting at or before this time. */
   start_time_to?: InputMaybe<Scalars['Date']['input']>;
 };
 
@@ -11231,10 +12810,15 @@ export type MentionInput = {
 
 /** The type of the mention. */
 export enum MentionType {
+  /** Mention an AI agent */
   Agent = 'Agent',
+  /** Mention a board */
   Board = 'Board',
+  /** Mention a project */
   Project = 'Project',
+  /** Mention a team */
   Team = 'Team',
+  /** Mention a user */
   User = 'User'
 }
 
@@ -11269,21 +12853,29 @@ export enum MessageKind {
 
 /** Identifies who sent a message. */
 export enum MessageSenderType {
+  /** An AI agent. */
   Agent = 'AGENT',
+  /** A human user. */
   User = 'USER'
 }
 
 /** Categorizes the purpose of a message. */
 export enum MessageType {
+  /** A system notification recorded when an agent fails to respond. */
   AgentError = 'AGENT_ERROR',
+  /** A regular chat message. */
   Standard = 'STANDARD'
 }
 
 /** Message type for sending chat messages */
 export enum MessageTypeInput {
+  /** A question message (ask mode - no code generation, just answers) */
   Ask = 'ASK',
+  /** An error message with a list of errors */
   Error = 'ERROR',
+  /** A plan mode message (planning phase before code generation) */
   Plan = 'PLAN',
+  /** A text message (triggers code generation) */
   Text = 'TEXT'
 }
 
@@ -11323,8 +12915,11 @@ export type MigrationProgress = {
 
 /** Controls how mirrored values are aggregated or selected. */
 export enum MirrorCalc {
+  /** Use only the earliest value/date found. */
   Earliest = 'EARLIEST',
+  /** Aggregate values from the earliest date through the latest date. */
   EarliestToLatest = 'EARLIEST_TO_LATEST',
+  /** Use only the latest value/date found. */
   Latest = 'LATEST'
 }
 
@@ -11354,7 +12949,9 @@ export type MirrorDisplayedLinkedColumnInput = {
 
 /** Controls which statuses are included when summing mirrored values. */
 export enum MirrorSum {
+  /** Include items from all statuses. */
   AllStatuses = 'ALL_STATUSES',
+  /** Include only items whose status is considered "Done". */
   DoneOnly = 'DONE_ONLY'
 }
 
@@ -11433,8 +13030,11 @@ export type MondayAssetDocumentSourceInput = {
 
 /** Types of Monday.com entities that can be used as data sources */
 export enum MondayDataSourceType {
+  /** A Monday.com board as data source */
   Board = 'BOARD',
+  /** A Monday.com item as data source */
   Item = 'ITEM',
+  /** A Monday.com object as data source */
   Object = 'OBJECT'
 }
 
@@ -11788,8 +13388,8 @@ export type Mutation = {
   set_object_schema_column_active_state?: Maybe<ObjectSchema>;
   /** Shorten a URL for a form and store it in the form settings. Returns the shortened link object. */
   shorten_form_url?: Maybe<FormShortenedLink>;
-  /** Subscribes a batch of users to an agent with the given role. */
-  subscribe_users_to_agent?: Maybe<SubscribeUsersToAgentResult>;
+  /** Report a bug, a missing capability, a documentation problem or general feedback about the monday API. Do NOT include any personally identifiable information (PII) such as names, email addresses, phone numbers, or any other personal data. */
+  submit_api_feedback?: Maybe<SubmitApiFeedbackResult>;
   /** Unassigns owners from a department. */
   unassign_department_owners?: Maybe<UnassignDepartmentOwnerResult>;
   /** Remove explicit time off assignments from multiple users and/or teams. Returns per-resource outcomes split by resource kind, allowing partial success. Maximum 100 user IDs and 100 team IDs per call. */
@@ -11802,8 +13402,6 @@ export type Mutation = {
   unpin_from_top: Update;
   /** Unpublishes object from public state back to draft state. Returns {success: true} on success, {success: false} on failure. */
   unpublish_object?: Maybe<ObjectOperationResponse>;
-  /** Unsubscribes a batch of users from an agent. Succeeds even if the memberships did not exist. A user may remove themselves without manage_agent; removing other users requires manage_agent. */
-  unsubscribe_users_from_agent?: Maybe<UnsubscribeUsersFromAgentResult>;
   /** Updates an existing app. If the app latest version is live, a new draft version is automatically created and updated. */
   update_app?: Maybe<AppType>;
   /** Update an app feature. */
@@ -12313,7 +13911,7 @@ export type MutationConvert_Board_To_ProjectArgs = {
 
 /** Root mutation type for the Dependencies service */
 export type MutationCreate_AppArgs = {
-  input: CreateAppInput;
+  input: CreateAppInputV2;
 };
 
 
@@ -13141,6 +14739,7 @@ export type MutationMove_Item_To_BoardArgs = {
   columns_mapping?: InputMaybe<Array<ColumnMappingInput>>;
   group_id: Scalars['ID']['input'];
   item_id: Scalars['ID']['input'];
+  parent_item_id?: InputMaybe<Scalars['ID']['input']>;
   subitems_columns_mapping?: InputMaybe<Array<ColumnMappingInput>>;
 };
 
@@ -13297,10 +14896,8 @@ export type MutationShorten_Form_UrlArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationSubscribe_Users_To_AgentArgs = {
-  agent_id: Scalars['ID']['input'];
-  role: AgentMembershipRole;
-  user_ids: Array<Scalars['ID']['input']>;
+export type MutationSubmit_Api_FeedbackArgs = {
+  input: SubmitApiFeedbackInput;
 };
 
 
@@ -13351,16 +14948,9 @@ export type MutationUnpublish_ObjectArgs = {
 
 
 /** Root mutation type for the Dependencies service */
-export type MutationUnsubscribe_Users_From_AgentArgs = {
-  agent_id: Scalars['ID']['input'];
-  user_ids: Array<Scalars['ID']['input']>;
-};
-
-
-/** Root mutation type for the Dependencies service */
 export type MutationUpdate_AppArgs = {
   id: Scalars['ID']['input'];
-  input: UpdateAppInput;
+  input: UpdateAppInputV2;
 };
 
 
@@ -13692,6 +15282,7 @@ export type MutationUpdate_ViewArgs = {
   filter?: InputMaybe<ItemsQueryGroup>;
   filter_team_id?: InputMaybe<Scalars['ID']['input']>;
   filter_user_id?: InputMaybe<Scalars['ID']['input']>;
+  is_pinned?: InputMaybe<Scalars['Boolean']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   settings?: InputMaybe<Scalars['JSON']['input']>;
   sort?: InputMaybe<Array<ItemsQueryOrderBy>>;
@@ -13709,6 +15300,7 @@ export type MutationUpdate_View_TableArgs = {
   filter?: InputMaybe<ItemsQueryGroup>;
   filter_team_id?: InputMaybe<Scalars['ID']['input']>;
   filter_user_id?: InputMaybe<Scalars['ID']['input']>;
+  is_pinned?: InputMaybe<Scalars['Boolean']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
   settings?: InputMaybe<TableViewSettingsInput>;
   sort?: InputMaybe<Array<ItemsQueryOrderBy>>;
@@ -13777,8 +15369,11 @@ export type NextPageRequestData = {
 
 /** Handling for columns without a round-trippable codec in CSV mode. */
 export enum NonImportableColumns {
+  /** Fail the export if any non-importable column would be included. */
   Error = 'ERROR',
+  /** Include non-importable columns using the existing export strategy output. */
   Include = 'INCLUDE',
+  /** Omit non-importable columns from the CSV entirely. */
   Skip = 'SKIP'
 }
 
@@ -13910,7 +15505,9 @@ export type NotificationSettingChannel = {
 
 /** The notification's target type. */
 export enum NotificationTargetType {
+  /** Update */
   Post = 'Post',
+  /** Item or Board. */
   Project = 'Project'
 }
 
@@ -13943,7 +15540,9 @@ export type NotificationV2 = {
 
 /** Indicates where the unit symbol should be placed in a number value */
 export enum NumberValueUnitDirection {
+  /** The symbol is placed on the left of the number */
   Left = 'left',
+  /** The symbol is placed on the right of the number */
   Right = 'right'
 }
 
@@ -14072,8 +15671,11 @@ export type ObjectSchema = {
 
 /** The type of column action to perform in a bulk object schema mutation. */
 export enum ObjectSchemaAction {
+  /** Create columns on an object schema */
   CreateObjectSchemaColumns = 'CREATE_OBJECT_SCHEMA_COLUMNS',
+  /** Delete columns from an object schema */
   DeleteObjectSchemaColumns = 'DELETE_OBJECT_SCHEMA_COLUMNS',
+  /** Update columns on an object schema */
   UpdateObjectSchemaColumns = 'UPDATE_OBJECT_SCHEMA_COLUMNS'
 }
 
@@ -14235,15 +15837,21 @@ export type ObjectSchemasFromBoard = {
 
 /** The state of the object. */
 export enum ObjectState {
+  /** The object is active. */
   Active = 'ACTIVE',
+  /** The object is archived. */
   Archived = 'ARCHIVED',
+  /** The object is deleted. */
   Deleted = 'DELETED'
 }
 
 /** Represents a monday object. */
 export enum ObjectType {
+  /** Represents a board object type. */
   Board = 'Board',
+  /** Represents a folder object type. */
   Folder = 'Folder',
+  /** Represents an overview object type. */
   Overview = 'Overview'
 }
 
@@ -14260,16 +15868,11 @@ export type ObjectTypeUniqueKey = {
   object_type_unique_key?: Maybe<Scalars['String']['output']>;
 };
 
-/** Boolean occurrence modifier for a clause inside a bool query */
-export enum Occur {
-  Must = 'MUST',
-  MustNot = 'MUST_NOT',
-  Should = 'SHOULD'
-}
-
 /** Strategy for handling matching items during import */
 export enum OnMatchBehaviour {
+  /** Skip if a matching item exists */
   Skip = 'SKIP',
+  /** Update if a matching item exists, otherwise create a new item */
   Upsert = 'UPSERT'
 }
 
@@ -14317,10 +15920,15 @@ export type OperationInput = {
 
 /** The current status of an asynchronous Magic solution operation. */
 export enum OperationStatus {
+  /** The operation has completed successfully. */
   Completed = 'COMPLETED',
+  /** The operation has failed. */
   Failed = 'FAILED',
+  /** The operation is currently being processed. */
   Processing = 'PROCESSING',
+  /** The operation is queued and waiting to be processed. */
   Queued = 'QUEUED',
+  /** Waiting for the session to be created. */
   SessionPending = 'SESSION_PENDING'
 }
 
@@ -14337,7 +15945,9 @@ export type Option = {
 
 /** Defines the sorting order for returned objects in the objects query. */
 export enum OrderBy {
+  /** Sort objects by their creation date, from newest to oldest. */
   CreatedAt = 'CREATED_AT',
+  /** Sort objects by when they were last used, from most recent to least recent. */
   UsedAt = 'USED_AT'
 }
 
@@ -14491,6 +16101,7 @@ export type PayloadInput = {
 
 /** Output format for people column values in CSV exports. */
 export enum PeopleColumnFormat {
+  /** Use display names (e.g. "Jordan Lee, Marketing Team") instead of IDs. */
   Name = 'NAME'
 }
 
@@ -14626,7 +16237,9 @@ export type Plan = {
 
 /** Type of resource in the planner */
 export enum PlannerResourceKind {
+  /** Placeholder resource */
   Placeholder = 'PLACEHOLDER',
+  /** User resource from the directory */
   User = 'USER'
 }
 
@@ -14731,7 +16344,9 @@ export type PortfolioUtilizationReportInput = {
 
 /** The position relative method. */
 export enum PositionRelative {
+  /** position after at the given entity. */
   AfterAt = 'after_at',
+  /** position before at the given entity. */
   BeforeAt = 'before_at'
 }
 
@@ -14837,11 +16452,17 @@ export type PrimitiveOutputFieldConfig = OutputFieldConfig & {
 
 /** The primitive types supported by the system */
 export enum PrimitiveTypes {
+  /** Boolean type for true/false values */
   Boolean = 'BOOLEAN',
+  /** Date type for date values */
   Date = 'DATE',
+  /** Float type for decimal values */
   Float = 'FLOAT',
+  /** Hour type for hour values */
   Hour = 'HOUR',
+  /** Number type for integer values */
   Number = 'NUMBER',
+  /** String type for text values */
   String = 'STRING'
 }
 
@@ -14854,7 +16475,9 @@ export type PriorityPromptResponse = {
 
 /** Defines the visibility and access control settings for objects in the Monday.com Objects Platform. */
 export enum PrivacyKind {
+  /** Private objects are only visible to specific users who are members of the object. */
   Private = 'PRIVATE',
+  /** Public objects are visible to all users within the account, unless their access is blocked on a higher level in the hierarchy, or by specific object permission. */
   Public = 'PUBLIC'
 }
 
@@ -14944,29 +16567,29 @@ export type PromptSuggestion = {
 
 /** The type of context for generating prompt suggestions */
 export enum PromptSuggestionFor {
+  /** Generate suggestions based on board context */
   Board = 'BOARD',
+  /** Generate suggestions based on a context source (e.g. a monday Doc), given in context_source */
   ContextSource = 'CONTEXT_SOURCE',
+  /** Generate suggestions based on item context */
   Item = 'ITEM',
+  /** Generate suggestions based on several boards context */
   Object = 'OBJECT',
+  /** Generate suggestions based on search query */
   SearchQuery = 'SEARCH_QUERY',
+  /** Generate suggestions based on user context */
   User = 'USER',
+  /** Generate suggestions based on widget context */
   Widget = 'WIDGET'
 }
 
 /** The platform requesting prompt suggestions */
 export enum PromptSuggestionPlatform {
+  /** Suggestions optimized for mobile experience */
   Mobile = 'MOBILE',
+  /** Suggestions optimized for web/desktop experience */
   Web = 'WEB'
 }
-
-/** A resource (agent, environment, or vault) available on an external provider */
-export type ProviderResource = {
-  __typename?: 'ProviderResource';
-  /** The unique identifier of the resource on the provider */
-  id?: Maybe<Scalars['ID']['output']>;
-  /** The display name of the resource */
-  name?: Maybe<Scalars['String']['output']>;
-};
 
 /** A personal time off entry for a user */
 export type PtoEntry = {
@@ -15029,7 +16652,9 @@ export type PublishedCommunityAppsResult = {
 
 /** Fields available for sorting published_community_apps results */
 export enum PublishedCommunityAppsSortBy {
+  /** Sort by total download count */
   Downloads = 'DOWNLOADS',
+  /** Sort by last updated date */
   UpdatedAt = 'UPDATED_AT'
 }
 
@@ -15150,6 +16775,8 @@ export type Query = {
   board_candidates?: Maybe<Array<Board>>;
   /** Get all dependency predecessors for every item on a board, paginated. Each item includes its predecessor edges with dependency type and lag. */
   board_dependencies?: Maybe<BoardDependencies>;
+  /** Fetch the dependency cycles on a board */
+  board_dependency_cycles?: Maybe<BoardDependencyCyclesResult>;
   /** Get the docs that are rendered as views of a board. */
   board_view_docs?: Maybe<Array<Maybe<Document>>>;
   /** Get a collection of boards. */
@@ -15254,7 +16881,7 @@ export type Query = {
   objects?: Maybe<Array<Object>>;
   /** Platform API data. */
   platform_api?: Maybe<PlatformApi>;
-  /** Get a collection of replies filtered by board IDs and date range. */
+  /** Get a collection of replies by their IDs, or filtered by board IDs and date range. */
   replies?: Maybe<Array<Reply>>;
   /** Returns resources availability: work schedule and time offs schedule for users and teams */
   resources_availability?: Maybe<ResourcesAvailability>;
@@ -15479,6 +17106,12 @@ export type QueryBoard_DependenciesArgs = {
   include_items_without_predecessors?: InputMaybe<Scalars['Boolean']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+/** Root query type for the Dependencies service */
+export type QueryBoard_Dependency_CyclesArgs = {
+  board_id: Scalars['ID']['input'];
 };
 
 
@@ -15821,9 +17454,10 @@ export type QueryObjectsArgs = {
 
 /** Root query type for the Dependencies service */
 export type QueryRepliesArgs = {
-  board_ids: Array<Scalars['ID']['input']>;
+  board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   created_at_from?: InputMaybe<Scalars['String']['input']>;
   created_at_to?: InputMaybe<Scalars['String']['input']>;
+  ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
 };
@@ -16070,20 +17704,6 @@ export type QueuedMessageFile = {
   s3_key?: Maybe<Scalars['String']['output']>;
 };
 
-/** Range query over a numeric or date field */
-export type RangeInput = {
-  /** The numeric or date field to range over */
-  field: SearchField;
-  /** Whether the upper bound is inclusive (default false) */
-  include_max?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Whether the lower bound is inclusive (default false) */
-  include_min?: InputMaybe<Scalars['Boolean']['input']>;
-  /** Upper bound (inclusive when include_max is true) */
-  max?: InputMaybe<Scalars['String']['input']>;
-  /** Lower bound (inclusive when include_min is true) */
-  min?: InputMaybe<Scalars['String']['input']>;
-};
-
 export type RatingValue = ColumnValue & {
   __typename?: 'RatingValue';
   /** The column that this value belongs to. */
@@ -16134,15 +17754,27 @@ export type ReconciliationResult = {
   succeeded?: Maybe<Scalars['Int']['output']>;
 };
 
+/** The kind of media in a meeting recording. */
+export enum RecordingMediaType {
+  /** Audio only, recorded on mobile or from a phone call. */
+  Audio = 'AUDIO',
+  /** Video with audio, recorded by the meeting bot or the desktop app. */
+  Video = 'VIDEO'
+}
+
 /** The direction of the relation from the object perspective */
 export enum RelationDirection {
+  /** Relations where the object is the target */
   Incoming = 'INCOMING',
+  /** Relations where the object is the source */
   Outgoing = 'OUTGOING'
 }
 
 /** The kind/type of relation between objects */
 export enum RelationKind {
+  /** Alias relation type */
   Alias = 'ALIAS',
+  /** Dependency relation type */
   Dependency = 'DEPENDENCY'
 }
 
@@ -16190,6 +17822,17 @@ export type RelevantPromptSuggestion = {
   style?: Maybe<Scalars['String']['output']>;
   /** Short preview label for the thumbnail */
   title?: Maybe<Scalars['String']['output']>;
+};
+
+/** A workspace ranked by relevance based on the activity on its boards and docs. Returned most relevant first. */
+export type RelevantWorkspace = {
+  __typename?: 'RelevantWorkspace';
+  /** Workspace ID. -1 is the main workspace. */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Whether the workspace is in the user's favorites. */
+  is_favorite?: Maybe<Scalars['Boolean']['output']>;
+  /** Workspace details resolved via federation from the workspaces subgraph. Null for the main workspace (id -1), which has no workspace entity. */
+  workspace?: Maybe<Workspace>;
 };
 
 /** Input type for requesting remote options for a field type, including dependencies, credentials, pagination, and search query. */
@@ -16289,8 +17932,12 @@ export type Reply = {
   edited_at: Scalars['Date']['output'];
   /** The reply's unique identifier. */
   id: Scalars['ID']['output'];
+  /** The ID of the item the reply's parent update belongs to. */
+  item_id?: Maybe<Scalars['ID']['output']>;
   kind: Scalars['String']['output'];
   likes: Array<Like>;
+  /** The ID of the update this reply belongs to. */
+  parent_id: Scalars['ID']['output'];
   pinned_to_top: Array<UpdatePin>;
   /** The reply's text body. */
   text_body?: Maybe<Scalars['String']['output']>;
@@ -16319,6 +17966,7 @@ export type RequiredColumns = {
 
 /** Algorithms for reranking results. */
 export enum RerankingStrategy {
+  /** Use cross-encoder model for reranking results. */
   CrossEncoder = 'CROSS_ENCODER'
 }
 
@@ -16339,14 +17987,23 @@ export type ResourceAttributeTypeInfo = {
 
 /** Available attribute types that can be retrieved from the resource directory */
 export enum ResourceAttributeTypeKey {
+  /** Base role of the resource */
   BaseRole = 'BASE_ROLE',
+  /** Resource email address */
   Email = 'EMAIL',
+  /** Resource job role */
   JobRole = 'JOB_ROLE',
+  /** Resource location */
   Location = 'LOCATION',
+  /** Resource name */
   Name = 'NAME',
+  /** Resource managers of the resource */
   ResourceManager = 'RESOURCE_MANAGER',
+  /** Resource skills */
   Skills = 'SKILLS',
+  /** Resource status */
   Status = 'STATUS',
+  /** Teams resource is a member of */
   Teams = 'TEAMS'
 }
 
@@ -16446,10 +18103,17 @@ export type RestoreHistoryEntry = {
 
 /** The possible statuses of a restore operation. */
 export enum RestoreStatus {
+  /** The restore failed to complete. */
   Failed = 'failed',
+  /** The restore is pending and has not started yet. */
   Pending = 'pending',
+  /** The restore is currently being processed. */
   Processing = 'processing',
+  /** Every dependency of the package is restored, and the restore is waiting to start. */
+  Ready = 'ready',
+  /** The restore has been rolled back. */
   Rollback = 'rollback',
+  /** The restore completed successfully. */
   Success = 'success'
 }
 
@@ -16462,6 +18126,15 @@ export type RestoringPointAgentAttribution = {
   agent_name?: Maybe<Scalars['String']['output']>;
   /** The type of entity (e.g. "agent", "workflow"). */
   entity_type?: Maybe<Scalars['String']['output']>;
+};
+
+/** Result of resyncing the trigger subscriptions of a managed live workflow */
+export type ResyncLiveWorkflowTriggersResult = {
+  __typename?: 'ResyncLiveWorkflowTriggersResult';
+  /** ID of the workflow */
+  id: Scalars['ID']['output'];
+  /** True when the subscriptions differed and were re-created, false when nothing changed */
+  resubscribed: Scalars['Boolean']['output'];
 };
 
 /** The computed governance risk classification for an agent. */
@@ -16541,25 +18214,41 @@ export type RuleConstraintInput = {
 
 /** Available operators for validation rules */
 export enum RuleOperator {
+  /** Value matches any of the specified values */
   AnyOf = 'ANY_OF',
+  /** Value is between two specified values */
   Between = 'BETWEEN',
+  /** Value contains the specified text */
   ContainsText = 'CONTAINS_TEXT',
+  /** Value equals the specified value */
   Equals = 'EQUALS',
+  /** Value is greater than the specified value */
   GreaterThan = 'GREATER_THAN',
+  /** Value is greater than or equal to the specified value */
   GreaterThanOrEquals = 'GREATER_THAN_OR_EQUALS',
+  /** Value is empty or not set */
   IsEmpty = 'IS_EMPTY',
+  /** Value is not empty */
   IsNotEmpty = 'IS_NOT_EMPTY',
+  /** Value is lower than the specified value */
   LowerThan = 'LOWER_THAN',
+  /** Value is lower than or equal to the specified value */
   LowerThanOrEqual = 'LOWER_THAN_OR_EQUAL',
+  /** Value does not match any of the specified values */
   NotAnyOf = 'NOT_ANY_OF',
+  /** Value does not contain the specified text */
   NotContainsText = 'NOT_CONTAINS_TEXT',
+  /** Value does not equal the specified value */
   NotEquals = 'NOT_EQUALS',
+  /** Value starts with the specified text */
   StartsWithText = 'STARTS_WITH_TEXT'
 }
 
 /** Which workflow revision to use for a run-once execution */
 export enum RunOnceSource {
+  /** Execute based on the draft version. Only available for workflows that have a draft revision (i.e., workflows created or edited through the Workflow Builder UI). */
   Draft = 'DRAFT',
+  /** Execute based on the current live (active) workflow version. This is the default for GraphQL-created workflows. */
   Live = 'LIVE'
 }
 
@@ -16607,9 +18296,18 @@ export type SaveWorkspaceAsTemplateResponse = {
   template_id?: Maybe<Scalars['Int']['output']>;
 };
 
+/** Scale mode settings of a connect boards column */
+export type ScaleCapability = {
+  __typename?: 'ScaleCapability';
+  /** The data view the column reads its connected items through */
+  data_view_id: Scalars['ID']['output'];
+};
+
 /** A detected conflict where resource availability cannot meet the task duration within its timeline. */
 export type ScheduleConflict = {
   __typename?: 'ScheduleConflict';
+  /** The board the task lives on: the project board, or its subitems board for a standard-board subitem. */
+  board_id: Scalars['ID']['output'];
   /** The task with the conflict. */
   pulse_id: Scalars['ID']['output'];
   /** The resource whose schedule conflicts with the task timeline. */
@@ -16626,8 +18324,11 @@ export enum ScopeType {
 
 /** Available search modes. */
 export enum Search {
+  /** Combined lexical and semantic search with reranking. */
   Hybrid = 'HYBRID',
+  /** Keyword-based search using text matching. */
   Lexical = 'LEXICAL',
+  /** Vector-based search using semantic similarity. */
   Semantic = 'SEMANTIC'
 }
 
@@ -16683,6 +18384,15 @@ export type SearchDateRangeLegacyInput = {
   updatedBefore?: InputMaybe<Scalars['ISO8601DateTime']['input']>;
 };
 
+/** A passage of the document that semantically matches the search query. */
+export type SearchDocChunk = {
+  __typename?: 'SearchDocChunk';
+  /** Text of the passage. */
+  content: Scalars['String']['output'];
+  /** Similarity of the passage to the query. Higher is more similar; comparable only within one search. */
+  score: Scalars['Float']['output'];
+};
+
 /** Matched text snippets per searchable document field. */
 export type SearchDocHighlights = {
   __typename?: 'SearchDocHighlights';
@@ -16709,31 +18419,6 @@ export type SearchDocResults = {
   /** List of doc search results. */
   results: Array<SearchDocResult>;
 };
-
-/** Indexed fields available for structured search queries */
-export enum SearchField {
-  BoardId = 'BOARD_ID',
-  BoardKind = 'BOARD_KIND',
-  BoardName = 'BOARD_NAME',
-  BoardOwnerId = 'BOARD_OWNER_ID',
-  BoardWithPulseViewPermissions = 'BOARD_WITH_PULSE_VIEW_PERMISSIONS',
-  CreatedBy = 'CREATED_BY',
-  GroupId = 'GROUP_ID',
-  GroupName = 'GROUP_NAME',
-  ItemsDates = 'ITEMS_DATES',
-  ItemsNumerics = 'ITEMS_NUMERICS',
-  ItemFreeText = 'ITEM_FREE_TEXT',
-  ItemId = 'ITEM_ID',
-  ItemLabels = 'ITEM_LABELS',
-  ItemName = 'ITEM_NAME',
-  ItemReferencedEmails = 'ITEM_REFERENCED_EMAILS',
-  ItemStatuses = 'ITEM_STATUSES',
-  ItemTags = 'ITEM_TAGS',
-  LastUpdatedBy = 'LAST_UPDATED_BY',
-  Persons = 'PERSONS',
-  UpdatedAt = 'UPDATED_AT',
-  WorkspaceId = 'WORKSPACE_ID'
-}
 
 /** Board data stored in the search index. */
 export type SearchIndexedBoard = {
@@ -16845,6 +18530,31 @@ export type SearchIndexedMeetingTalkingPoint = {
   timestamp_seconds?: Maybe<Scalars['Float']['output']>;
   /** Title of the topic the talking point belongs to. */
   topic_title?: Maybe<Scalars['String']['output']>;
+};
+
+/** Meeting data stored in the search index. */
+export type SearchIndexedMeetingV2 = {
+  __typename?: 'SearchIndexedMeetingV2';
+  /** Email addresses of meeting participants. */
+  attendee_emails?: Maybe<Array<Scalars['String']['output']>>;
+  /** Names of meeting participants. */
+  attendee_names?: Maybe<Array<Scalars['String']['output']>>;
+  /** When the meeting ended. */
+  end_time?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** AI-generated one-sentence meeting gist. */
+  gist?: Maybe<Scalars['String']['output']>;
+  /** Matched text snippets. Null when the meeting was returned by filters alone. */
+  highlights?: Maybe<SearchMeetingHighlights>;
+  /** Meeting ID (UUID). */
+  id: Scalars['ID']['output'];
+  /** Calendar provider (e.g. google_calendar, outlook_calendar). */
+  meeting_provider?: Maybe<Scalars['String']['output']>;
+  /** When the meeting started. */
+  start_time?: Maybe<Scalars['ISO8601DateTime']['output']>;
+  /** AI-generated meeting summary, in full. */
+  summary?: Maybe<Scalars['String']['output']>;
+  /** Meeting title. */
+  title?: Maybe<Scalars['String']['output']>;
 };
 
 /** Overview (dashboard) data stored in the search index. */
@@ -16981,6 +18691,23 @@ export type SearchMeetingActionItemResults = {
   results: Array<SearchMeetingActionItemResult>;
 };
 
+/** Matched text snippets per searchable meeting field. Each field is null when it did not match lexically, an empty list for a semantic match, otherwise the matched fragments with <em> tags around matched terms. */
+export type SearchMeetingHighlights = {
+  __typename?: 'SearchMeetingHighlights';
+  /** Fragments from the action items. Searched only when match_by is omitted. */
+  action_points?: Maybe<Array<Scalars['String']['output']>>;
+  /** Fragments from the participant names. Searched only when match_by is omitted. */
+  attendee_names?: Maybe<Array<Scalars['String']['output']>>;
+  /** Fragments from the AI-generated gist. */
+  gist?: Maybe<Array<Scalars['String']['output']>>;
+  /** Fragments from the AI-generated summary. */
+  summary?: Maybe<Array<Scalars['String']['output']>>;
+  /** Fragments from the talking points. Searched only when match_by is omitted. */
+  talking_points?: Maybe<Array<Scalars['String']['output']>>;
+  /** Fragments from the meeting title. */
+  title?: Maybe<Array<Scalars['String']['output']>>;
+};
+
 /** A single meeting search result with indexed and live data. */
 export type SearchMeetingResult = {
   __typename?: 'SearchMeetingResult';
@@ -16990,6 +18717,15 @@ export type SearchMeetingResult = {
   indexed_data: SearchIndexedMeeting;
 };
 
+/** A single meeting search result with indexed and live data. */
+export type SearchMeetingResultV2 = {
+  __typename?: 'SearchMeetingResultV2';
+  /** Unique identifier of the meeting. */
+  id: Scalars['ID']['output'];
+  /** Meeting data from the search index. */
+  indexed_data: SearchIndexedMeetingV2;
+};
+
 /** Wrapper for a list of meeting search results. */
 export type SearchMeetingResults = {
   __typename?: 'SearchMeetingResults';
@@ -16997,6 +18733,13 @@ export type SearchMeetingResults = {
   results: Array<SearchMeetingResult>;
   /** Total number of matching meetings in the index (before limit is applied). */
   total_count?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Wrapper for a list of meeting search results. */
+export type SearchMeetingResultsV2 = {
+  __typename?: 'SearchMeetingResultsV2';
+  /** List of meeting search results. */
+  results: Array<SearchMeetingResultV2>;
 };
 
 /** Matched text snippets per searchable talking-point field. */
@@ -17071,10 +18814,15 @@ export type SearchNamespaceDocsArgs = {
 /** Per-entity search namespace. Each field searches a single entity type. */
 export type SearchNamespaceItemsArgs = {
   board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
+  creator_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   date_range?: InputMaybe<CrossEntityDateRangeInput>;
   limit?: InputMaybe<Scalars['Int']['input']>;
+  person_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   query: Scalars['String']['input'];
+  status_labels?: InputMaybe<Array<Scalars['String']['input']>>;
   strategy?: InputMaybe<SearchStrategy>;
+  tag_names?: InputMaybe<Array<Scalars['String']['input']>>;
+  team_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   workspace_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
@@ -17156,8 +18904,11 @@ export type SearchOverviewResults = {
 
 /** Controls the trade-off between search quality and response time. */
 export enum SearchStrategy {
+  /** Good search quality with reasonable response time. Default. */
   Balanced = 'BALANCED',
+  /** Best search quality with higher response time. */
   Quality = 'QUALITY',
+  /** Faster results with lower search quality. */
   Speed = 'SPEED'
 }
 
@@ -17274,14 +19025,19 @@ export type Sequence = {
 
 /** The type of context a sequence is associated with */
 export enum SequenceContext {
+  /** Sequence is associated with a board */
   Board = 'BOARD'
 }
 
 /** The status of a sequence */
 export enum SequenceStatus {
+  /** Sequence is active */
   Active = 'ACTIVE',
+  /** Sequence has been deleted */
   Deleted = 'DELETED',
+  /** Sequence is inactive */
   Inactive = 'INACTIVE',
+  /** Sequence is missing required configuration */
   MissingConfig = 'MISSING_CONFIG'
 }
 
@@ -17363,17 +19119,25 @@ export type SharedTemplate = {
 
 /** The kind of shared template */
 export enum SharedTemplateKind {
+  /** A marketplace template */
   Marketplace = 'MARKETPLACE',
+  /** A remix template */
   Remix = 'REMIX'
 }
 
 /** The publication status of a shared template */
 export enum SharedTemplateStatus {
+  /** Template has been archived */
   Archived = 'ARCHIVED',
+  /** Template is a draft and not visible publicly */
   Draft = 'DRAFT',
+  /** Template is awaiting review */
   PendingReview = 'PENDING_REVIEW',
+  /** Template is published and publicly visible */
   Published = 'PUBLISHED',
+  /** Template was rejected during review */
   Rejected = 'REJECTED',
+  /** Template is unlisted and not discoverable */
   Unlisted = 'UNLISTED'
 }
 
@@ -17418,10 +19182,15 @@ export type SnapshotHistoryEntry = {
 
 /** The possible statuses of a snapshot operation. */
 export enum SnapshotStatus {
+  /** The snapshot failed to complete. */
   Failed = 'failed',
+  /** The snapshot is pending and has not started yet. */
   Pending = 'pending',
+  /** The snapshot is currently being processed. */
   Processing = 'processing',
+  /** The snapshot has been rolled back and can be recreated. */
   Rollback = 'rollback',
+  /** The snapshot completed successfully. */
   Success = 'success'
 }
 
@@ -17550,13 +19319,17 @@ export type Solution = {
 
 /** Direction for sorting items */
 export enum SortDirection {
+  /** Ascending order */
   Asc = 'ASC',
+  /** Descending order */
   Desc = 'DESC'
 }
 
 /** Sort order direction */
 export enum SortOrder {
+  /** Ascending order */
   Asc = 'ASC',
+  /** Descending order */
   Desc = 'DESC'
 }
 
@@ -17644,14 +19417,19 @@ export type SprintSnapshotItemColumnValue = {
 
 /** The kind of sprint snapshot. */
 export enum SprintSnapshotKind {
+  /** Sprint complete snapshot kind. */
   Complete = 'COMPLETE',
+  /** Sprint start snapshot kind. */
   Start = 'START'
 }
 
 /** current state of the monday dev sprint. */
 export enum SprintState {
+  /** sprint is active and in progress. */
   Active = 'ACTIVE',
+  /** sprint is completed. */
   Completed = 'COMPLETED',
+  /** sprint is planned and not yet started. */
   Planned = 'PLANNED'
 }
 
@@ -17689,9 +19467,13 @@ export type StandaloneBoardDataViewSource = {
 
 /** The possible states for a board or item. */
 export enum State {
+  /** Active only (Default). */
   Active = 'active',
+  /** Active, Archived and Deleted. */
   All = 'all',
+  /** Archived only. */
   Archived = 'archived',
+  /** Deleted only. */
   Deleted = 'deleted'
 }
 
@@ -17703,6 +19485,7 @@ export type StatusCalculatedCapabilityInput = {
 
 /** Available functions for calculating values in status column capabilities */
 export enum StatusCalculatedFunction {
+  /** Count the number of labels */
   CountKeys = 'COUNT_KEYS'
 }
 
@@ -17890,6 +19673,33 @@ export type SubitemAnswerInput = {
   answers: Array<FormAnswerInput>;
 };
 
+/** A report about the monday API. */
+export type SubmitApiFeedbackInput = {
+  /** The details of the report, 1-3000 characters. Say what you tried, what you expected and what you got. For a feature_request, describe the action you need in monday product terms, and say whether you found a workaround and what it was. Do NOT include any personally identifiable information (PII) such as names, email addresses, phone numbers, or any other personal data. */
+  description: Scalars['String']['input'];
+  /** The error code you received, for example COMPLEXITY_BUDGET_EXHAUSTED. Up to 100 characters. */
+  error_code?: InputMaybe<Scalars['String']['input']>;
+  /** The schema coordinate the report is about, for example Mutation.reorder_items or Item.column_values. If the field does not exist, give the name you expected. Up to 200 characters. */
+  field_path?: InputMaybe<Scalars['String']['input']>;
+  /** The type of feedback: a bug, a feature request, a documentation problem, or general feedback. */
+  kind: ApiFeedbackKind;
+  /** What you did next after you hit the problem: gave up, did it in the monday UI, worked around it with other API calls, or something else. */
+  outcome?: InputMaybe<ApiFeedbackOutcome>;
+  /** The request_id from the extensions of the earlier API call's response that this report is about, if you have it. Up to 128 characters. */
+  request_id?: InputMaybe<Scalars['String']['input']>;
+  /** What you were trying to do, in plain words, for example "move an item to the top of its group". 1-200 characters. Do NOT include any personally identifiable information (PII) such as names, email addresses, phone numbers, or any other personal data. */
+  title: Scalars['String']['input'];
+};
+
+/** The result of submitting API feedback. */
+export type SubmitApiFeedbackResult = {
+  __typename?: 'SubmitApiFeedbackResult';
+  /** The id of this report. Give it when you follow up on the same report. */
+  feedback_id: Scalars['ID']['output'];
+  /** True when the report was accepted. */
+  success: Scalars['Boolean']['output'];
+};
+
 /** Result of the subscribe_teams_to_agent mutation. */
 export type SubscribeTeamsToAgentResult = {
   __typename?: 'SubscribeTeamsToAgentResult';
@@ -17906,7 +19716,9 @@ export type SubscribeUsersToAgentResult = {
 
 /** Defines the type of the user's role as members of the object */
 export enum SubscriberKind {
+  /** User will be added as an owner of the object, granting them full control permissions. */
   Owner = 'OWNER',
+  /** User will be added as a subscriber to the object, receiving notifications about changes. */
   Subscriber = 'SUBSCRIBER'
 }
 
@@ -17916,7 +19728,7 @@ export type SubscriptionDiscount = {
   discount_model_type: SubscriptionDiscountModelType;
   discount_type: SubscriptionDiscountType;
   /** The value of the discount in percentage (e.g. the value 80 refers to 80%) */
-  value: Scalars['Int']['output'];
+  value: Scalars['Float']['output'];
 };
 
 /** The information whether the discount is percentage or nominal */
@@ -17985,6 +19797,8 @@ export type SuggestedAgent = {
   description?: Maybe<Scalars['String']['output']>;
   /** Whether this agent should have web search capabilities */
   include_web_search?: Maybe<Scalars['Boolean']['output']>;
+  /** The agent persona to show for this suggestion */
+  persona?: Maybe<SuggestionPersona>;
   /** A hook/one-liner for the agent */
   pitch?: Maybe<Scalars['String']['output']>;
   /** A ready-to-use prompt for creating this agent via monday-agents */
@@ -18003,6 +19817,33 @@ export type SuggestedTrigger = {
   /** JSON-encoded field values matching the automations API format: { fieldKey: { value, fieldTypeReferenceId } } */
   field_values?: Maybe<Scalars['String']['output']>;
 };
+
+/** The agent persona shown for a suggested agent */
+export type SuggestionPersona = {
+  __typename?: 'SuggestionPersona';
+  /** Avatar image URL */
+  avatar_url?: Maybe<Scalars['String']['output']>;
+  /** Card background color (hex) */
+  background_color?: Maybe<Scalars['String']['output']>;
+  /** Card banner image URL */
+  card_banner_url?: Maybe<Scalars['String']['output']>;
+  /** Persona gender */
+  gender?: Maybe<SuggestionPersonaGender>;
+  /** Persona id, the same as the agent-template id */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** Persona display name */
+  name?: Maybe<Scalars['String']['output']>;
+};
+
+/** Gender of an agent persona */
+export enum SuggestionPersonaGender {
+  /** The persona is female */
+  Female = 'FEMALE',
+  /** The persona is male */
+  Male = 'MALE',
+  /** The persona is gender-neutral */
+  Neutral = 'NEUTRAL'
+}
 
 /** Result of re-syncing a vibe app install permitted workspaces */
 export type SyncWorkspacePermissionsResponse = {
@@ -18125,7 +19966,9 @@ export type TalkingPoint = {
 
 /** The type of target object for a relation */
 export enum TargetObject {
+  /** Board object type */
   Board = 'BOARD',
+  /** Dashboard object type */
   Dashboard = 'DASHBOARD'
 }
 
@@ -18159,7 +20002,9 @@ export type Task = {
 
 /** Action taken by the task engine when processing a task */
 export enum TaskAction {
+  /** A new task was created */
   Create = 'CREATE',
+  /** An existing task was updated */
   Update = 'UPDATE'
 }
 
@@ -18180,18 +20025,27 @@ export type TaskDecisionChangelogEvent = {
 
 /** Type of event source for task ingestion */
 export enum TaskIngestionSource {
+  /** Event from an update mention */
   UpdateMention = 'UPDATE_MENTION',
+  /** Event from a person/creator column change (user assigned to item) */
   UserAssigned = 'USER_ASSIGNED'
 }
 
 /** Status of a task */
 export enum TaskStatus {
+  /** Task is completed */
   Done = 'DONE',
+  /** Task is being worked on */
   InProgress = 'IN_PROGRESS',
+  /** Item was incorrectly classified as a task */
   NotATask = 'NOT_A_TASK',
+  /** Task is deferred */
   NotNow = 'NOT_NOW',
+  /** Task is no longer relevant and should be archived */
   NoLongerRelevant = 'NO_LONGER_RELEVANT',
+  /** Task is pending triage */
   Pending = 'PENDING',
+  /** Task is queued to be worked on */
   Todo = 'TODO'
 }
 
@@ -18272,9 +20126,13 @@ export type Template = {
 
 /** Lifecycle status of a template installation async operation. */
 export enum TemplateInstallationStatus {
+  /** All boards fully ready. */
   Complete = 'COMPLETE',
+  /** Duplication failed. Any partial boards were rolled back. */
   Failed = 'FAILED',
+  /** Boards being created. */
   InProgress = 'IN_PROGRESS',
+  /** Job queued, not yet started. */
   Pending = 'PENDING'
 }
 
@@ -18309,11 +20167,17 @@ export enum TemplateType {
 
 /** Text block formatting types. Controls visual appearance and semantic meaning. */
 export enum TextBlock {
+  /** Code styling */
   Code = 'CODE',
+  /** Main document title (H1 equivalent) */
   LargeTitle = 'LARGE_TITLE',
+  /** Section heading (H2 equivalent) */
   MediumTitle = 'MEDIUM_TITLE',
+  /** Regular paragraph text */
   NormalText = 'NORMAL_TEXT',
+  /** Indented quote/blockquote styling */
   Quote = 'QUOTE',
+  /** Subsection heading (H3 equivalent) */
   SmallTitle = 'SMALL_TITLE'
 }
 
@@ -18410,10 +20274,15 @@ export type TimeBucket = {
 
 /** Granularity of time buckets (day, week, month, quarter, year). */
 export enum TimeGranularity {
+  /** Day-level buckets. */
   Days = 'DAYS',
+  /** Month-level buckets. */
   Months = 'MONTHS',
+  /** Quarter-level buckets. */
   Quarters = 'QUARTERS',
+  /** Week-level buckets. */
   Weeks = 'WEEKS',
+  /** Year-level buckets. */
   Years = 'YEARS'
 }
 
@@ -18497,7 +20366,9 @@ export type TimeOffEntryInput = {
 
 /** Type of a time off entry */
 export enum TimeOffEntryKind {
+  /** A custom non-working date entry */
   Custom = 'CUSTOM',
+  /** A public holiday */
   Holiday = 'HOLIDAY'
 }
 
@@ -18629,28 +20500,51 @@ export type TimelineItem = {
 
 /** Kind of timeline item. */
 export enum TimelineItemKind {
+  /** General activity */
   Activity = 'activity',
+  /** AI assistant interaction */
   AiAssistant = 'aiAssistant',
+  /** AI-generated reply */
   AiReply = 'aiReply',
+  /** AI-generated summary */
   AiSummary = 'aiSummary',
+  /** Campaign event */
   Campaigns = 'campaigns',
+  /** Custom activity */
   Custom = 'custom',
+  /** Custom internal app interaction */
   CustomInternalApp = 'customInternalApp',
+  /** Demo email */
   DemoEmail = 'demoEmail',
+  /** Email communication */
   Email = 'email',
+  /** Form submission */
   Form = 'form',
+  /** Google Calendar event */
   GoogleCalendar = 'googleCalendar',
+  /** Meeting */
   Meeting = 'meeting',
+  /** Merged tickets */
   MergedTickets = 'mergedTickets',
+  /** Note */
   Note = 'note',
+  /** Outlook Calendar event */
   OutlookCalendar = 'outlookCalendar',
+  /** Outreach expert phone call */
   OutreachExpertPhoneCall = 'outreachExpertPhoneCall',
+  /** outreachExpertPhoneCallV2 */
   OutreachExpertPhoneCallV2 = 'outreachExpertPhoneCallV2',
+  /** Phone call */
   PhoneCall = 'phoneCall',
+  /** Portal interaction */
   Portal = 'portal',
+  /** Portfolio status update */
   PortfolioStatus = 'portfolio_status',
+  /** Sequences email */
   SequencesEmail = 'sequencesEmail',
+  /** Video meeting */
   VideoMeeting = 'videoMeeting',
+  /** Zoom meeting */
   Zoom = 'zoom'
 }
 
@@ -18659,7 +20553,9 @@ export type TimelineItemMetadata = EmailTimelineItemMetadata;
 
 /** Product kind that owns the timeline item. */
 export enum TimelineItemProductKind {
+  /** CRM product */
   Crm = 'crm',
+  /** Service product */
   Service = 'service'
 }
 
@@ -18755,7 +20651,9 @@ export type TokenUsage = {
 
 /** Decision for a tool call requiring human approval */
 export enum ToolCallDecision {
+  /** The tool call is approved for execution */
   Approved = 'APPROVED',
+  /** The tool call is rejected and will not execute */
   Rejected = 'REJECTED'
 }
 
@@ -18867,18 +20765,24 @@ export type TransferAgentOwnershipResult = {
 
 /** The type of transformation to apply to the workflow variable's value */
 export enum TransformationType {
+  /** Applies to array of values. On runtime will resolve placeholder values to create a new array */
   Array = 'ARRAY',
+  /** Converts a string to date */
   Date = 'DATE',
+  /** Will use the value as is */
   Direct = 'DIRECT',
+  /** Applies to numeric values with arithmetic operations. On runtime will calcualte the expression to a numeric value */
   DynamicNumber = 'DYNAMIC_NUMBER',
+  /** Applies to string values with placeholders. On runtime will resolve the placeholder's values to create a new string */
   DynamicText = 'DYNAMIC_TEXT',
+  /** Converts a string to a date including the hour */
   Hour = 'HOUR'
 }
 
 /** Result of checking eligibility to transition a vibe app to external mode */
 export type TransitionToExternalEligibility = {
   __typename?: 'TransitionToExternalEligibility';
-  /** Whether the current user may publish this app to the public web — they hold the account permission and own all boards connected to this app */
+  /** Whether the current user may publish this app to the public web — they hold the account permission, the account's plan allows public sharing, and they own all boards connected to this app */
   is_eligible?: Maybe<Scalars['Boolean']['output']>;
 };
 
@@ -18923,8 +20827,11 @@ export type TriggerEvent = {
 
 /** Automation run status */
 export enum TriggerEventState {
+  /** Automation run exhausted all retry attempts */
   Exhausted = 'exhausted',
+  /** Automation run failed */
   Failure = 'failure',
+  /** Automation run completed successfully */
   Success = 'success'
 }
 
@@ -19064,7 +20971,9 @@ export type UnupdatedUser = {
 
 /** Activation status values that can be set via mutations. */
 export enum UpdatableUserStatus {
+  /** The user is active. */
   Active = 'ACTIVE',
+  /** The user is deactivated. */
   Inactive = 'INACTIVE'
 }
 
@@ -19128,8 +21037,8 @@ export type UpdateAppFeatureInput = {
   deployment?: InputMaybe<AppFeatureReleaseInput>;
 };
 
-/** Input for updating an existing app. Creates draft version for live apps. */
-export type UpdateAppInput = {
+/** Input for updating an existing app with string permission scopes. Creates draft version for live apps. */
+export type UpdateAppInputV2 = {
   /** Array of user IDs with access (replaces existing collaborators) */
   collaborators?: InputMaybe<Array<Scalars['ID']['input']>>;
   /** Detailed description of the app */
@@ -19139,7 +21048,7 @@ export type UpdateAppInput = {
   /** The display name of the app */
   name?: InputMaybe<Scalars['String']['input']>;
   /** Array of permission scopes (replaces existing permissions) */
-  permissions?: InputMaybe<Array<AppPermission>>;
+  permissions?: InputMaybe<Array<Scalars['String']['input']>>;
   /** URL-friendly identifier (only settable if app has no existing slug) */
   slug?: InputMaybe<Scalars['String']['input']>;
   /** Webhook endpoint URL */
@@ -19208,27 +21117,6 @@ export type UpdateBoardManualMetadataResult = {
   /** The updated manual metadata for the board */
   manual_metadata?: Maybe<BoardManualMetadata>;
   /** Whether the update succeeded */
-  success?: Maybe<Scalars['Boolean']['output']>;
-};
-
-/** Input for updating mutable fields of an existing custom agent */
-export type UpdateCustomAgentInput = {
-  /** The ID of the custom agent to update. Optional when the agent updates itself (inferred from the calling agent identity). */
-  agent_id?: InputMaybe<Scalars['ID']['input']>;
-  /** New custom avatar URL (HTTPS) for the agent. */
-  avatar_url?: InputMaybe<Scalars['String']['input']>;
-  /** New HTTPS callback URL for agent event notifications. Only valid for CUSTOM_AGENT type. */
-  callback_url?: InputMaybe<Scalars['String']['input']>;
-  /** New display name for the agent */
-  name?: InputMaybe<Scalars['String']['input']>;
-};
-
-/** Payload returned after updating a custom agent */
-export type UpdateCustomAgentPayload = {
-  __typename?: 'UpdateCustomAgentPayload';
-  /** Custom-agent only — new secret used to sign callback requests, returned when a callback_url is set/updated. Never logged. */
-  signing_secret?: Maybe<Scalars['String']['output']>;
-  /** Whether the update was successful */
   success?: Maybe<Scalars['Boolean']['output']>;
 };
 
@@ -19750,7 +21638,7 @@ export type UpsertEntityIdMappingsResult = {
   success?: Maybe<Scalars['Boolean']['output']>;
 };
 
-/** A monday.com user. */
+/** A monday user. Data Hub knows only the id; the other fields come from monday. */
 export type User = {
   __typename?: 'User';
   /** The user's account. */
@@ -19824,7 +21712,7 @@ export type User = {
 };
 
 
-/** A monday.com user. */
+/** A monday user. Data Hub knows only the id; the other fields come from monday. */
 export type UserActivity_LogsArgs = {
   board_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
   correlation_ids?: InputMaybe<Array<Scalars['ID']['input']>>;
@@ -19837,7 +21725,7 @@ export type UserActivity_LogsArgs = {
 };
 
 
-/** A monday.com user. */
+/** A monday user. Data Hub knows only the id; the other fields come from monday. */
 export type UserTeamsArgs = {
   ids?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
@@ -19939,8 +21827,11 @@ export type UserContextResponse = {
 
 /** The user creation flow/context type. */
 export enum UserCreationFlow {
+  /** Created as an agent user. */
   AgentUserCreation = 'AGENT_USER_CREATION',
+  /** Created as an API user. */
   ApiUserCreation = 'API_USER_CREATION',
+  /** Created via system creation flow. */
   SystemCreation = 'SYSTEM_CREATION'
 }
 
@@ -19967,46 +21858,83 @@ export type UserFeedback = {
 
 /** @deprecated Use UserKindFilter with the user_kind arg instead. The kind to search users by. */
 export enum UserKind {
+  /** All users in account. */
   All = 'all',
+  /** Only guests. */
   Guests = 'guests',
+  /** Only company members. */
   NonGuests = 'non_guests',
+  /** All non pending members. */
   NonPending = 'non_pending'
 }
 
 /** Filter for user kinds, including kind groups. */
 export enum UserKindFilter {
+  /** A admin user. */
   Admin = 'ADMIN',
+  /** A agent member user. */
   AgentMember = 'AGENT_MEMBER',
+  /** A agent signup user user. */
   AgentSignupUser = 'AGENT_SIGNUP_USER',
+  /** A ai platform agent api user user. */
   AiPlatformAgentApiUser = 'AI_PLATFORM_AGENT_API_USER',
+  /** A group representing admin, member, guest, view-only, agent member, service, and vibe users. */
   Basic = 'BASIC',
+  /** A campaigns api user user. */
   CampaignsApiUser = 'CAMPAIGNS_API_USER',
+  /** A crm commerce api user user. */
   CrmCommerceApiUser = 'CRM_COMMERCE_API_USER',
+  /** A crm user agent member user. */
   CrmUserAgentMember = 'CRM_USER_AGENT_MEMBER',
+  /** A data retention api user user. */
   DataRetentionApiUser = 'DATA_RETENTION_API_USER',
+  /** A dependencies api user user. */
   DependenciesApiUser = 'DEPENDENCIES_API_USER',
+  /** A entity knowledge api user user. */
   EntityKnowledgeApiUser = 'ENTITY_KNOWLEDGE_API_USER',
+  /** A external agent detached member user. */
   ExternalAgentDetachedMember = 'EXTERNAL_AGENT_DETACHED_MEMBER',
+  /** A external agent member user. */
   ExternalAgentMember = 'EXTERNAL_AGENT_MEMBER',
+  /** A goals api user user. */
   GoalsApiUser = 'GOALS_API_USER',
+  /** A guest user. */
   Guest = 'GUEST',
+  /** A historical tracking backfill api user user. */
   HistoricalTrackingBackfillApiUser = 'HISTORICAL_TRACKING_BACKFILL_API_USER',
+  /** A member user. */
   Member = 'MEMBER',
+  /** A monday service api user user. */
   MondayServiceApiUser = 'MONDAY_SERVICE_API_USER',
+  /** A nexus api user user. */
   NexusApiUser = 'NEXUS_API_USER',
+  /** A omnichannel api user user. */
   OmnichannelApiUser = 'OMNICHANNEL_API_USER',
+  /** A org hub api user user. */
   OrgHubApiUser = 'ORG_HUB_API_USER',
+  /** A personal agent member user. */
   PersonalAgentMember = 'PERSONAL_AGENT_MEMBER',
+  /** A portal user. */
   Portal = 'PORTAL',
+  /** A portfolio api user user. */
   PortfolioApiUser = 'PORTFOLIO_API_USER',
+  /** A projects api user user. */
   ProjectsApiUser = 'PROJECTS_API_USER',
+  /** A resource directory api user user. */
   ResourceDirectoryApiUser = 'RESOURCE_DIRECTORY_API_USER',
+  /** A service ai agent member user. */
   ServiceAiAgentMember = 'SERVICE_AI_AGENT_MEMBER',
+  /** A service user user. */
   ServiceUser = 'SERVICE_USER',
+  /** A sprint management api user user. */
   SprintManagementApiUser = 'SPRINT_MANAGEMENT_API_USER',
+  /** A vibe user user. */
   VibeUser = 'VIBE_USER',
+  /** A view only user. */
   ViewOnly = 'VIEW_ONLY',
+  /** A workspace primary agent member user. */
   WorkspacePrimaryAgentMember = 'WORKSPACE_PRIMARY_AGENT_MEMBER',
+  /** A work management agent member user. */
   WorkManagementAgentMember = 'WORK_MANAGEMENT_AGENT_MEMBER'
 }
 
@@ -20020,37 +21948,69 @@ export type UserKindFilterInput = {
 
 /** A specific user kind value. */
 export enum UserKindValue {
+  /** A admin user. */
   Admin = 'ADMIN',
+  /** A agent member user. */
   AgentMember = 'AGENT_MEMBER',
+  /** A agent signup user user. */
   AgentSignupUser = 'AGENT_SIGNUP_USER',
+  /** A ai platform agent api user user. */
   AiPlatformAgentApiUser = 'AI_PLATFORM_AGENT_API_USER',
+  /** A campaigns api user user. */
   CampaignsApiUser = 'CAMPAIGNS_API_USER',
+  /** A crm commerce api user user. */
   CrmCommerceApiUser = 'CRM_COMMERCE_API_USER',
+  /** A crm user agent member user. */
   CrmUserAgentMember = 'CRM_USER_AGENT_MEMBER',
+  /** A data retention api user user. */
   DataRetentionApiUser = 'DATA_RETENTION_API_USER',
+  /** A dependencies api user user. */
   DependenciesApiUser = 'DEPENDENCIES_API_USER',
+  /** A entity knowledge api user user. */
   EntityKnowledgeApiUser = 'ENTITY_KNOWLEDGE_API_USER',
+  /** A external agent detached member user. */
   ExternalAgentDetachedMember = 'EXTERNAL_AGENT_DETACHED_MEMBER',
+  /** A external agent member user. */
   ExternalAgentMember = 'EXTERNAL_AGENT_MEMBER',
+  /** A goals api user user. */
   GoalsApiUser = 'GOALS_API_USER',
+  /** A guest user. */
   Guest = 'GUEST',
+  /** A historical tracking backfill api user user. */
   HistoricalTrackingBackfillApiUser = 'HISTORICAL_TRACKING_BACKFILL_API_USER',
+  /** A member user. */
   Member = 'MEMBER',
+  /** A monday service api user user. */
   MondayServiceApiUser = 'MONDAY_SERVICE_API_USER',
+  /** A nexus api user user. */
   NexusApiUser = 'NEXUS_API_USER',
+  /** A omnichannel api user user. */
   OmnichannelApiUser = 'OMNICHANNEL_API_USER',
+  /** A org hub api user user. */
   OrgHubApiUser = 'ORG_HUB_API_USER',
+  /** A personal agent member user. */
   PersonalAgentMember = 'PERSONAL_AGENT_MEMBER',
+  /** A portal user. */
   Portal = 'PORTAL',
+  /** A portfolio api user user. */
   PortfolioApiUser = 'PORTFOLIO_API_USER',
+  /** A projects api user user. */
   ProjectsApiUser = 'PROJECTS_API_USER',
+  /** A resource directory api user user. */
   ResourceDirectoryApiUser = 'RESOURCE_DIRECTORY_API_USER',
+  /** A service ai agent member user. */
   ServiceAiAgentMember = 'SERVICE_AI_AGENT_MEMBER',
+  /** A service user user. */
   ServiceUser = 'SERVICE_USER',
+  /** A sprint management api user user. */
   SprintManagementApiUser = 'SPRINT_MANAGEMENT_API_USER',
+  /** A vibe user user. */
   VibeUser = 'VIBE_USER',
+  /** A view only user. */
   ViewOnly = 'VIEW_ONLY',
+  /** A workspace primary agent member user. */
   WorkspacePrimaryAgentMember = 'WORKSPACE_PRIMARY_AGENT_MEMBER',
+  /** A work management agent member user. */
   WorkManagementAgentMember = 'WORK_MANAGEMENT_AGENT_MEMBER'
 }
 
@@ -20090,9 +22050,13 @@ export type UserPermitScopeInput = {
 
 /** The kind of scope for user permits checks */
 export enum UserPermitScopeKind {
+  /** Account scope */
   Account = 'ACCOUNT',
+  /** Account product scope */
   AccountProduct = 'ACCOUNT_PRODUCT',
+  /** Board scope */
   Board = 'BOARD',
+  /** Workspace scope */
   Workspace = 'WORKSPACE'
 }
 
@@ -20156,21 +22120,33 @@ export type UserRequest = {
 
 /** The type of user request */
 export enum UserRequestKind {
+  /** Notification that plan is close to limit */
   NotifyPlanCloseToLimit = 'notify_plan_close_to_limit',
+  /** Request to enable external guest access for a vibe app */
   RequestExternalAccess = 'request_external_access',
+  /** Request to admins to update account permissions so users can make their vibe apps public */
   RequestToMakeAppPublic = 'request_to_make_app_public',
+  /** Request to admins to publish a vibe app on behalf of a member without publish permission */
   RequestToPublishApp = 'request_to_publish_app',
+  /** Request to admins to upgrade before the account's free published apps are unpublished / moved to draft */
   RequestToUpgradeBeforeAppsUnpublish = 'request_to_upgrade_before_apps_unpublish',
+  /** Request to admins to upgrade the plan to increase the board connection limit for a Vibe app */
   RequestToUpgradeBoardConnection = 'request_to_upgrade_board_connection',
+  /** Request to upgrade plan */
   RequestToUpgradePlan = 'request_to_upgrade_plan',
+  /** Request to admins to upgrade the account package */
   RequestToUpgradeVibePackage = 'request_to_upgrade_vibe_package',
+  /** Request to admins to upgrade to the 25-app vibe package so the requester can view published apps */
   RequestToUpgradeVibePackageForAppPreviews = 'request_to_upgrade_vibe_package_for_app_previews'
 }
 
 /** The status of a user request */
 export enum UserRequestStatusKind {
+  /** The request has been approved */
   Approved = 'approved',
+  /** The request has been declined */
   Declined = 'declined',
+  /** The request is pending admin action */
   Pending = 'pending'
 }
 
@@ -20184,8 +22160,11 @@ export enum UserRole {
 
 /** The activation status of a user. */
 export enum UserStatus {
+  /** The user is active. */
   Active = 'ACTIVE',
+  /** The user is deactivated. */
   Inactive = 'INACTIVE',
+  /** The user has not yet accepted the invitation. */
   Pending = 'PENDING'
 }
 
@@ -20196,12 +22175,15 @@ export type UserUpdateInput = {
 
 /** The direction to sort users. */
 export enum UsersSortDirection {
+  /** Sort in ascending order. */
   Asc = 'ASC',
+  /** Sort in descending order. */
   Desc = 'DESC'
 }
 
 /** The field to sort users by. */
 export enum UsersSortField {
+  /** Sort by the date the user was created. */
   CreatedAt = 'CREATED_AT'
 }
 
@@ -20215,8 +22197,11 @@ export type UsersSortInput = {
 
 /** Denominator for utilization ratio (e.g., utilization = effort / available). Determines what value is used as the denominator. */
 export enum UtilizationDenominator {
+  /** Use allocated hours as denominator. */
   Allocated = 'ALLOCATED',
+  /** Use available hours as denominator. */
   Available = 'AVAILABLE',
+  /** Use spent hours as denominator. */
   Spent = 'SPENT'
 }
 
@@ -20367,13 +22352,21 @@ export type Version = {
 
 /** All possible API version types */
 export enum VersionKind {
+  /** Current version */
   Current = 'current',
+  /** No longer supported version. Migrate to current version as soon as possible */
   Deprecated = 'deprecated',
+  /** Bleeding-edge rolling version that constantly changes */
   Dev = 'dev',
+  /** Previous version. Migrate to current version as soon as possible */
   Maintenance = 'maintenance',
+  /** Old version that will be deprecated in January. Migrate to current version as soon as possible */
   OldMaintenance = 'old__maintenance',
+  /** Old version that will be deprecated in January. Migrate to current version as soon as possible */
   OldPreviousMaintenance = 'old_previous_maintenance',
+  /** Older version that will be deprecated in January. Migrate to current version as soon as possible */
   PreviousMaintenance = 'previous_maintenance',
+  /** Next version */
   ReleaseCandidate = 'release_candidate'
 }
 
@@ -20388,10 +22381,15 @@ export type VibeAggregateBucket = {
 
 /** Aggregate function computed over matching documents. */
 export enum VibeAggregateFn {
+  /** Average of the numeric field. */
   Avg = 'AVG',
+  /** Count of matching documents. */
   Count = 'COUNT',
+  /** Maximum of the field. */
   Max = 'MAX',
+  /** Minimum of the field. */
   Min = 'MIN',
+  /** Sum of the numeric field. */
   Sum = 'SUM'
 }
 
@@ -20505,7 +22503,7 @@ export type VibeAppAccess = {
   name?: Maybe<Scalars['String']['output']>;
   /** The public deployment URL of the app, if deployed. */
   public_link?: Maybe<Scalars['String']['output']>;
-  /** The lifecycle state of the app. Only EXTERNAL apps are reachable from the public web. */
+  /** The lifecycle state of the app. EXTERNAL apps are reachable from the public web; INVITE_ONLY apps only by the external users invited to them. */
   state?: Maybe<VibeAppState>;
   /** The vibe user id this app is mapped to (the board member id). */
   vibe_user_id?: Maybe<Scalars['ID']['output']>;
@@ -20558,6 +22556,17 @@ export type VibeAppInstance = {
   updated_at?: Maybe<Scalars['Date']['output']>;
 };
 
+/** What the current user may do with this app's integrations under the account's admin permissions */
+export type VibeAppIntegrationPolicy = {
+  __typename?: 'VibeAppIntegrationPolicy';
+  /** Whether the current user may add integrations to this app */
+  can_add?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether the current user may connect or reconnect integration accounts in this app */
+  can_connect?: Maybe<Scalars['Boolean']['output']>;
+  /** Whether this app's integrations are disabled at runtime because an admin restricted integrations for the app owner */
+  suspended?: Maybe<Scalars['Boolean']['output']>;
+};
+
 /** The owner of a Vibe app */
 export type VibeAppOwner = {
   __typename?: 'VibeAppOwner';
@@ -20591,16 +22600,23 @@ export type VibeAppPublishStatus = {
 
 /** Visibility scope for searching Vibe apps */
 export enum VibeAppSearchScope {
+  /** Account-published apps the caller does not own */
   Account = 'ACCOUNT',
+  /** Apps the caller owns or was invited to, plus account-published apps they do not own */
   All = 'ALL',
+  /** Apps the caller owns or was invited to, any publish state */
   My = 'MY'
 }
 
 /** Fields available for sorting search_apps results */
 export enum VibeAppSearchSortField {
+  /** Sort by creation date */
   CreatedAt = 'CREATED_AT',
+  /** Sort alphabetically by app name */
   Name = 'NAME',
+  /** Sort by last updated date */
   UpdatedAt = 'UPDATED_AT',
+  /** Sort by distinct viewers over the last 30 days. Ignored (falls back to UPDATED_AT) when search_term is set. */
   ViewCount = 'VIEW_COUNT'
 }
 
@@ -20614,11 +22630,17 @@ export type VibeAppSearchSortInput = {
 
 /** Field to sort vibe apps by */
 export enum VibeAppSortField {
+  /** Created at */
   CreatedAt = 'CREATED_AT',
+  /** Published status */
   IsPublished = 'IS_PUBLISHED',
+  /** App name */
   Name = 'NAME',
+  /** Published at date */
   PublishedAt = 'PUBLISHED_AT',
+  /** App lifecycle state */
   State = 'STATE',
+  /** Updated at */
   UpdatedAt = 'UPDATED_AT'
 }
 
@@ -20632,12 +22654,21 @@ export type VibeAppSortInput = {
 
 /** The lifecycle state of a vibe app */
 export enum VibeAppState {
+  /** App was disabled by monday and cannot be published */
   Disabled = 'DISABLED',
+  /** App is publicly accessible */
   External = 'EXTERNAL',
+  /** App is published within the account */
   Internal = 'INTERNAL',
+  /** App is published within the account and open to the external users invited to it */
+  InviteOnly = 'INVITE_ONLY',
+  /** Legacy app disabled by monday (pre-state migration) */
   OldDisabled = 'OLD_DISABLED',
+  /** Legacy published app (pre-state migration) */
   OldInternal = 'OLD_INTERNAL',
+  /** Legacy private app (pre-state migration) */
   OldPrivate = 'OLD_PRIVATE',
+  /** App is private to the creator */
   Private = 'PRIVATE'
 }
 
@@ -20656,10 +22687,15 @@ export type VibeAppStateCounts = {
 
 /** The status of an AI-generated app */
 export enum VibeAppStatus {
+  /** App has been created but generation has not started */
   Created = 'CREATED',
+  /** App is currently being deployed */
   Deploying = 'DEPLOYING',
+  /** App is currently being generated */
   Generating = 'GENERATING',
+  /** App is currently processing a message */
   ProcessingMessage = 'PROCESSING_MESSAGE',
+  /** App has been successfully generated and is ready to use */
   Ready = 'READY'
 }
 
@@ -20700,15 +22736,21 @@ export type VibeAppUserAccess = {
 
 /** The status of a code version */
 export enum VibeAppVersionStatus {
+  /** Version is in draft state */
   Draft = 'DRAFT',
+  /** Version deploy was interrupted/cancelled before completion */
   Interrupted = 'INTERRUPTED',
+  /** Version is currently live/deployed */
   Live = 'LIVE',
+  /** Version has been retired */
   Retired = 'RETIRED'
 }
 
 /** The type of visit when a user opens a Vibe app */
 export enum VibeAppVisitKind {
+  /** Builder/editor — ChatPage or BoardChatPage */
   Build = 'BUILD',
+  /** Consumer surfaces — object, item view, board view, share link */
   View = 'VIEW'
 }
 
@@ -20755,6 +22797,382 @@ export type VibeAuthenticatedIntegration = {
   /** App icon URL */
   icon_url?: Maybe<Scalars['String']['output']>;
 };
+
+/** A scheduled Automation of a vibe app, as the app settings page lists it */
+export type VibeAutomation = {
+  __typename?: 'VibeAutomation';
+  /** Why it needs attention, on the automations list only: null for any other status, or when it could not be read */
+  attention?: Maybe<VibeAutomationAttention>;
+  /** Why a needs-attention Automation needs it; null otherwise */
+  attention_reason?: Maybe<VibeAutomationAttentionReason>;
+  /** The boards its steps read or write, one per board, in step order. Boards whose name is unknown are left out */
+  boards: Array<VibeAutomationBoard>;
+  /** The Vibe DB collections its steps read or write, one per collection, in step order */
+  collections: Array<Scalars['String']['output']>;
+  /** What the Automation does, in words */
+  description?: Maybe<Scalars['String']['output']>;
+  /** The Automation id */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The integrations its steps use, one per app, in step order */
+  integrations: Array<VibeAutomationIntegration>;
+  /** When the Automation last ran */
+  last_run_at?: Maybe<Scalars['Date']['output']>;
+  /** The version to pass as expected_version_id when turning a draft on, so it's the one the page showed */
+  latest_version_id?: Maybe<Scalars['ID']['output']>;
+  /** The Automation name */
+  name?: Maybe<Scalars['String']['output']>;
+  /** When the Automation runs next */
+  next_run_at?: Maybe<Scalars['Date']['output']>;
+  /** The revision to pass as expected_revision when changing the Automation */
+  revision?: Maybe<Scalars['Int']['output']>;
+  /** When the Automation runs, in words, e.g. "Every day at 09:00 (UTC)" */
+  schedule_summary?: Maybe<Scalars['String']['output']>;
+  /** The Automation state */
+  status?: Maybe<VibeAutomationStatus>;
+  /** How many times the Automation ran, skipped runs not counted. Null when unknown (e.g. right after set_automation_active), so hide it rather than show 0 */
+  total_runs?: Maybe<Scalars['Int']['output']>;
+};
+
+/** Why an Automation needs attention: the open issue that stopped it */
+export type VibeAutomationAttention = {
+  __typename?: 'VibeAutomationAttention';
+  /** The app of the integration it is about, e.g. "Gmail", when the app still has that integration */
+  app_name?: Maybe<Scalars['String']['output']>;
+  /** What went wrong, e.g. "repeated_failures" (its last runs failed), "auth_failed" (an integration refused its credentials), "integration_not_connected" */
+  code: Scalars['String']['output'];
+  /** What its last failed run's failing step ended with, e.g. "Intentional test failure", for one stopped by failed runs (repeated_failures). Null when unknown */
+  error?: Maybe<Scalars['String']['output']>;
+  /** How many of its newest runs failed in a row, for one stopped by failed runs (repeated_failures), counted from its last few runs. Null when unknown */
+  failed_runs?: Maybe<Scalars['Int']['output']>;
+  /** The service's own words for it, in English; for a code with no copy of its own */
+  message: Scalars['String']['output'];
+  /** The step it's at, when it's at one */
+  step_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** Why an Automation needs attention */
+export enum VibeAutomationAttentionReason {
+  /** A board it uses isn't connected */
+  ConnectBoard = 'CONNECT_BOARD',
+  /** A step needs a setting chosen */
+  MissingSetting = 'MISSING_SETTING',
+  /** Something it needs isn't set up */
+  Other = 'OTHER',
+  /** A connected account needs to be reconnected */
+  ReconnectAccount = 'RECONNECT_ACCOUNT',
+  /** Its last few runs failed */
+  RunsFailing = 'RUNS_FAILING'
+}
+
+/** A board an Automation reads or writes */
+export type VibeAutomationBoard = {
+  __typename?: 'VibeAutomationBoard';
+  /** The board id */
+  id: Scalars['ID']['output'];
+  /** The board name */
+  name: Scalars['String']['output'];
+};
+
+/** A scheduled Automation of a vibe app, as the automation page shows it */
+export type VibeAutomationDetail = {
+  __typename?: 'VibeAutomationDetail';
+  /** The version that runs on the schedule; null when none is on */
+  active_version_id?: Maybe<Scalars['ID']['output']>;
+  /** Why a needs-attention Automation needs it; null otherwise */
+  attention_reason?: Maybe<VibeAutomationAttentionReason>;
+  /** What the Automation does, in words */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Whether the latest version differs from the one that is on; while true, run_automation is refused, since the preview shows the latest */
+  has_pending_edit: Scalars['Boolean']['output'];
+  /** The Automation id */
+  id: Scalars['ID']['output'];
+  /** The latest version, which turning a draft on activates */
+  latest_version_id: Scalars['ID']['output'];
+  /** The Automation name */
+  name: Scalars['String']['output'];
+  /** The latest version as a schedule and steps; null when it cannot be previewed */
+  preview?: Maybe<VibeAutomationPreview>;
+  /** The version the preview shows: pass it as expected_version_id so the one the page showed is the one used */
+  preview_version_id: Scalars['ID']['output'];
+  /** The revision to pass as expected_revision when changing the Automation */
+  revision: Scalars['Int']['output'];
+  /** The run that is admitted or running now; null when none is */
+  run_in_progress?: Maybe<VibeAutomationRunInProgress>;
+  /** Whether running it now is a one-off run, because the Automation is a draft or paused */
+  runs_once: Scalars['Boolean']['output'];
+  /** Whether a run sends something outside the app, so only its owner may approve it */
+  sends_something: Scalars['Boolean']['output'];
+  /** The Automation state */
+  status: VibeAutomationStatus;
+};
+
+/** An Automation's flow, as the app settings' side panel draws it: when it runs, then its steps */
+export type VibeAutomationFlow = {
+  __typename?: 'VibeAutomationFlow';
+  /** The Automation id */
+  automation_id: Scalars['ID']['output'];
+  /** An edit waits for approval: the steps are the edited ones, not those of the version running */
+  has_pending_edit: Scalars['Boolean']['output'];
+  /** When the Automation runs, in words, e.g. "Every day at 09:00 (UTC)" */
+  schedule?: Maybe<Scalars['String']['output']>;
+  /** Its latest version's steps, in order. Empty when they can't be shown in full (e.g. control steps), so show that instead of a partial flow */
+  steps: Array<VibeAutomationFlowStep>;
+};
+
+/** One step of an Automation's flow, described as chat's approval card describes it */
+export type VibeAutomationFlowStep = {
+  __typename?: 'VibeAutomationFlowStep';
+  /** More about the step, when known */
+  description?: Maybe<Scalars['String']['output']>;
+  /** Line by line, what the step reads, writes or asks AI */
+  details: Array<Scalars['String']['output']>;
+  /** The definition step's id; null when the step has none */
+  id?: Maybe<Scalars['ID']['output']>;
+  /** The app an integration step runs in; null when the app's name isn't known */
+  integration?: Maybe<VibeAutomationIntegration>;
+  /** What the step does */
+  kind: VibeAutomationStepKind;
+  /** What a code step works on; null when it touches neither boards nor collections, or none can be named */
+  resource?: Maybe<VibeAutomationStepResource>;
+  /** The step in one line, e.g. "Read new items" */
+  title: Scalars['String']['output'];
+};
+
+/** An integration an Automation uses, e.g. Gmail */
+export type VibeAutomationIntegration = {
+  __typename?: 'VibeAutomationIntegration';
+  /** The integration app name, e.g. "Gmail" */
+  app_name?: Maybe<Scalars['String']['output']>;
+  /** The integration app icon URL */
+  icon_url?: Maybe<Scalars['String']['output']>;
+};
+
+/** When an Automation runs and what its steps do */
+export type VibeAutomationPreview = {
+  __typename?: 'VibeAutomationPreview';
+  /** When the Automation runs, in words, e.g. "Every day at 09:00 (UTC)" */
+  schedule: Scalars['String']['output'];
+  /** The steps, in the order they run */
+  steps: Array<VibeAutomationFlowStep>;
+};
+
+/** A run of a vibe app Automation, as the app settings page lists it */
+export type VibeAutomationRun = {
+  __typename?: 'VibeAutomationRun';
+  /** Whether the Automation that ran has been deleted since */
+  automation_deleted: Scalars['Boolean']['output'];
+  /** The id of the Automation that ran */
+  automation_id: Scalars['ID']['output'];
+  /** The name of the Automation that ran */
+  automation_name: Scalars['String']['output'];
+  /** When the run was created, an ISO 8601 timestamp */
+  created_at: Scalars['String']['output'];
+  /** Why it didn't run or didn't succeed, e.g. ai_credits_exhausted for a run skipped because the AI credits for Vibe automations are used up */
+  error_code?: Maybe<Scalars['String']['output']>;
+  /** The run id */
+  id: Scalars['ID']['output'];
+  /** Whether a user started the run, e.g. from chat, rather than its schedule */
+  is_manual: Scalars['Boolean']['output'];
+  /** How the run ended */
+  status: VibeAutomationRunStatus;
+};
+
+/** A run of a vibe app Automation and what happened to each of its steps. There is no error text */
+export type VibeAutomationRunDetail = {
+  __typename?: 'VibeAutomationRunDetail';
+  /** The Automation the run belongs to */
+  automation_id: Scalars['ID']['output'];
+  /** Whether the run's step detail is no longer kept */
+  detail_expired: Scalars['Boolean']['output'];
+  /** Why the run failed or did not run, as a code, e.g. AI credits ran out; null when it did not */
+  error_code?: Maybe<Scalars['String']['output']>;
+  /** The run id */
+  id: Scalars['ID']['output'];
+  /** The run status */
+  status: VibeAutomationRunDetailStatus;
+  /** What happened to each step, in the order they ran */
+  steps: Array<VibeAutomationStepResult>;
+  /** The version the run used */
+  version_id: Scalars['ID']['output'];
+};
+
+/** The status of a run of a vibe app Automation, including the runs that have not ended */
+export enum VibeAutomationRunDetailStatus {
+  /** Accepted and waiting to start */
+  Admitted = 'ADMITTED',
+  /** Stopped partway, e.g. the Automation was deleted while it ran */
+  Cancelled = 'CANCELLED',
+  /** Held for too long, so it never ran */
+  Expired = 'EXPIRED',
+  /** A step failed */
+  Failed = 'FAILED',
+  /** Waiting for a connection to be fixed */
+  Held = 'HELD',
+  /** Running now */
+  Running = 'RUNNING',
+  /** Nothing ran, e.g. the previous run was still going */
+  Skipped = 'SKIPPED',
+  /** Every step ran */
+  Succeeded = 'SUCCEEDED',
+  /** A status this version of the API does not know yet */
+  Unknown = 'UNKNOWN'
+}
+
+/** A run of an Automation that is admitted or running */
+export type VibeAutomationRunInProgress = {
+  __typename?: 'VibeAutomationRunInProgress';
+  /** The run id */
+  id: Scalars['ID']['output'];
+  /** The run status */
+  status?: Maybe<VibeAutomationRunDetailStatus>;
+  /** The version the run uses; null when unknown */
+  version_id?: Maybe<Scalars['ID']['output']>;
+};
+
+/** A run that was started; read it with the automation_run query */
+export type VibeAutomationRunStarted = {
+  __typename?: 'VibeAutomationRunStarted';
+  /** The run id */
+  run_id: Scalars['ID']['output'];
+};
+
+/** Run counts and credits of a scope for a period */
+export type VibeAutomationRunStats = {
+  __typename?: 'VibeAutomationRunStats';
+  /** Whether the account's runs are charged AI credits; when false, credits_used means nothing */
+  credits_billed: Scalars['Boolean']['output'];
+  /** AI credits the runs were charged, 0 when none. Hide it when credits_billed is false */
+  credits_used: Scalars['Float']['output'];
+  /** Failed runs */
+  failed_runs: Scalars['Int']['output'];
+  /** Succeeded runs */
+  succeeded_runs: Scalars['Int']['output'];
+  /** Runs that started: succeeded, failed, cancelled, held and expired. Skipped runs are left out */
+  total_runs: Scalars['Int']['output'];
+};
+
+/** How a run of a vibe app Automation ended */
+export enum VibeAutomationRunStatus {
+  /** Stopped partway, e.g. the Automation was deleted while it ran */
+  Cancelled = 'CANCELLED',
+  /** Held for too long, so it never ran */
+  Expired = 'EXPIRED',
+  /** A step failed */
+  Failed = 'FAILED',
+  /** Waiting for a connection to be fixed */
+  Held = 'HELD',
+  /** Nothing ran, e.g. the previous run was still going */
+  Skipped = 'SKIPPED',
+  /** Every step ran */
+  Succeeded = 'SUCCEEDED'
+}
+
+/** Which runs to list */
+export enum VibeAutomationRunsFilter {
+  /** Runs that started: succeeded, failed, cancelled, held and expired. Skipped runs are left out */
+  All = 'ALL',
+  /** Cancelled runs */
+  Cancelled = 'CANCELLED',
+  /** Failed runs */
+  Failed = 'FAILED',
+  /** Skipped runs */
+  Skipped = 'SKIPPED',
+  /** Succeeded runs */
+  Succeeded = 'SUCCEEDED'
+}
+
+/** A page of the runs of a scope, newest first */
+export type VibeAutomationRunsPage = {
+  __typename?: 'VibeAutomationRunsPage';
+  /** The runs of the page */
+  items: Array<VibeAutomationRun>;
+  /** Pass it as cursor to read the next page. Null on the last page */
+  next_cursor?: Maybe<Scalars['String']['output']>;
+};
+
+/** The period to read runs in, by when each run was created */
+export enum VibeAutomationRunsPeriod {
+  /** Runs created in the last 7 days */
+  Last_7Days = 'LAST_7_DAYS',
+  /** Runs created in the last 24 hours */
+  Last_24Hours = 'LAST_24_HOURS',
+  /** Runs created in the last 30 days */
+  Last_30Days = 'LAST_30_DAYS',
+  /** Runs created in the last 90 days */
+  Last_90Days = 'LAST_90_DAYS'
+}
+
+/** What an Automation belongs to. scope_id is the vibe app id for APP */
+export enum VibeAutomationScopeType {
+  /** A vibe app; scope_id is its id */
+  App = 'APP'
+}
+
+/** The state of a vibe app Automation */
+export enum VibeAutomationStatus {
+  /** On: runs on its schedule */
+  Active = 'ACTIVE',
+  /** Created but never turned on; turning it on activates its latest version */
+  Draft = 'DRAFT',
+  /** Held by the service until fixed (e.g. a disconnected integration, or repeated failed runs): still on its schedule, but not running. `attention` says why; turning it on re-checks it, or puts a saved fix live */
+  NeedsAttention = 'NEEDS_ATTENTION',
+  /** Turned off; resuming turns it back on */
+  Paused = 'PAUSED'
+}
+
+/** What a step of an Automation does */
+export enum VibeAutomationStepKind {
+  /** Asks AI */
+  Ai = 'AI',
+  /** Runs code: reads or writes boards or Vibe DB collections */
+  Code = 'CODE',
+  /** Calls an integration, e.g. sends a Slack message */
+  Integration = 'INTEGRATION'
+}
+
+/** What a code step works on, by name */
+export type VibeAutomationStepResource = {
+  __typename?: 'VibeAutomationStepResource';
+  /** The board or collection names, in step order */
+  names: Array<Scalars['String']['output']>;
+  /** Boards or Vibe DB collections */
+  type: VibeAutomationStepResourceType;
+};
+
+/** What a code step works on */
+export enum VibeAutomationStepResourceType {
+  /** monday boards */
+  Board = 'BOARD',
+  /** Vibe DB collections */
+  VibeDb = 'VIBE_DB'
+}
+
+/** What happened to one step of a run. There is no error text, only a code */
+export type VibeAutomationStepResult = {
+  __typename?: 'VibeAutomationStepResult';
+  /** Which attempt this is; null when unknown */
+  attempt?: Maybe<Scalars['Int']['output']>;
+  /** Why the step failed, as a code; null when it did not */
+  error_code?: Maybe<Scalars['String']['output']>;
+  /** What happened to the step */
+  status: VibeAutomationStepResultStatus;
+  /** The id of the step in the version the run used */
+  step_id: Scalars['ID']['output'];
+};
+
+/** What happened to one step of a run of a vibe app Automation */
+export enum VibeAutomationStepResultStatus {
+  /** It is not known whether the step ran */
+  Ambiguous = 'AMBIGUOUS',
+  /** The step failed */
+  Failed = 'FAILED',
+  /** The step did not run */
+  Skipped = 'SKIPPED',
+  /** The step ran */
+  Succeeded = 'SUCCEEDED',
+  /** A status this version of the API does not know yet */
+  Unknown = 'UNKNOWN'
+}
 
 /** A single operation within a batch write. */
 export type VibeBatchOpInput = {
@@ -20915,13 +23333,21 @@ export type VibeFilterInput = {
 
 /** Comparison operator for a document filter. Filters combine with AND only. */
 export enum VibeFilterOp {
+  /** Array field contains the provided value. */
   ArrayContains = 'ARRAY_CONTAINS',
+  /** Equals. */
   Eq = 'EQ',
+  /** Greater than. */
   Gt = 'GT',
+  /** Greater than or equal to. */
   Gte = 'GTE',
+  /** Field value is in the provided array. */
   In = 'IN',
+  /** Less than. */
   Lt = 'LT',
+  /** Less than or equal to. */
   Lte = 'LTE',
+  /** Not equals. */
   Neq = 'NEQ'
 }
 
@@ -20949,8 +23375,11 @@ export type VibeMemoryScope = {
 
 /** Which memory scope to read or write */
 export enum VibeMemoryScopeKind {
+  /** Account-wide (team) memory */
   Account = 'ACCOUNT',
+  /** Memory scoped to one vibe app */
   App = 'APP',
+  /** The current user's personal memory */
   User = 'USER'
 }
 
@@ -21059,8 +23488,12 @@ export type VibeOrderByInput = {
 /** Permissions for vibe related actions */
 export type VibePermissions = {
   __typename?: 'VibePermissions';
+  /** Permission to add and connect integrations in vibe apps. Account-level; on an existing app, read vibe.app_integration_policy, which also accounts for the app owner */
+  can_add_vibe_integrations?: Maybe<Scalars['Boolean']['output']>;
   /** Permission to create or edit vibe apps */
   can_create_or_edit_vibe_app?: Maybe<Scalars['Boolean']['output']>;
+  /** Permission to create Automations in vibe apps. Account-level; the app role still applies */
+  can_create_vibe_automations?: Maybe<Scalars['Boolean']['output']>;
   /** Permission to generate public vibe template links */
   can_generate_public_vibe_templates?: Maybe<Scalars['Boolean']['output']>;
   /** Permission to publish vibe apps to the public web */
@@ -21090,8 +23523,11 @@ export type VibePermissionsCreate_Board_ViewsArgs = {
 
 /** Filter apps by published status */
 export enum VibePublishedStatusFilter {
+  /** Return all apps regardless of published status */
   All = 'ALL',
+  /** Return only non-published apps */
   NotPublished = 'NOT_PUBLISHED',
+  /** Return only published apps */
   Published = 'PUBLISHED'
 }
 
@@ -21271,7 +23707,9 @@ export type VibeQueriesUser_RequestsArgs = {
 
 /** Sort direction for an order-by clause. */
 export enum VibeSortDir {
+  /** Ascending order. */
   Asc = 'ASC',
+  /** Descending order. */
   Desc = 'DESC'
 }
 
@@ -21282,16 +23720,23 @@ export type VibeSubscription = {
   has_top_tier_vibe_apps_package?: Maybe<Scalars['Boolean']['output']>;
   /** Maximum number of published apps */
   maxPublishedApps?: Maybe<Scalars['Int']['output']>;
+  /** Maximum number of boards that can be connected to a single app */
+  max_connected_boards?: Maybe<Scalars['Int']['output']>;
   /** Current number of published apps */
   publishedApps?: Maybe<Scalars['Int']['output']>;
 };
 
 /** The variant/platform target for vibe apps */
 export enum VibeVariant {
+  /** Full-page app within a monday.com board */
   BoardView = 'BOARD_VIEW',
+  /** Item-level app variant */
   ItemView = 'ITEM_VIEW',
+  /** Object-based app variant */
   Object = 'OBJECT',
+  /** Fullstack object-based app with server-side code generation */
   ObjectFullstack = 'OBJECT_FULLSTACK',
+  /** Item-level app variant */
   VibeItemView = 'VIBE_ITEM_VIEW'
 }
 
@@ -21331,20 +23776,27 @@ export type VideoContent = DocBaseBlockContent & {
 
 /** Specifies the entity scope for the created view */
 export enum ViewContext {
+  /** Associate the view with the board */
   Board = 'BOARD'
 }
 
 /** Available view types for board displays */
 export enum ViewKind {
+  /** App view for feature-specific display */
   App = 'APP',
+  /** Dashboard view for displaying dashboard view */
   Dashboard = 'DASHBOARD',
+  /** Form view for input and data entry */
   Form = 'FORM',
+  /** Table view for displaying items in a structured table format */
   Table = 'TABLE'
 }
 
 /** Type of mutation operation */
 export enum ViewMutationKind {
+  /** Create operation */
   Create = 'CREATE',
+  /** Update operation */
   Update = 'UPDATE'
 }
 
@@ -21410,37 +23862,65 @@ export type Webhook = {
 
 /** The webhook's target type. */
 export enum WebhookEventType {
+  /** Column value changed on board */
   ChangeColumnValue = 'change_column_value',
+  /** An item name changed on board */
   ChangeName = 'change_name',
+  /** Specific Column value changed on board */
   ChangeSpecificColumnValue = 'change_specific_column_value',
+  /** Status column value changed on board */
   ChangeStatusColumnValue = 'change_status_column_value',
+  /** Column value changed on board subitem */
   ChangeSubitemColumnValue = 'change_subitem_column_value',
+  /** An subitem name changed on board */
   ChangeSubitemName = 'change_subitem_name',
+  /** Column created on a board */
   CreateColumn = 'create_column',
+  /** An item was created on board */
   CreateItem = 'create_item',
+  /** A subitem was created on a board */
   CreateSubitem = 'create_subitem',
+  /** An update was posted on board subitem */
   CreateSubitemUpdate = 'create_subitem_update',
+  /** An update was posted on board item */
   CreateUpdate = 'create_update',
+  /** An update was deleted from board item */
   DeleteUpdate = 'delete_update',
+  /** An update was edited on board item */
   EditUpdate = 'edit_update',
+  /** An item was archived on a board */
   ItemArchived = 'item_archived',
+  /** An item was deleted from a board */
   ItemDeleted = 'item_deleted',
+  /** An item is moved to any group */
   ItemMovedToAnyGroup = 'item_moved_to_any_group',
+  /** An item is moved to a specific group */
   ItemMovedToSpecificGroup = 'item_moved_to_specific_group',
+  /** An item restored back to board */
   ItemRestored = 'item_restored',
+  /** A subitem is moved from one parent to another */
   MoveSubitem = 'move_subitem',
+  /** A subitem was archived on a board */
   SubitemArchived = 'subitem_archived',
+  /** A subitem was deleted from a board */
   SubitemDeleted = 'subitem_deleted'
 }
 
 /** Day of the week */
 export enum WeekDay {
+  /** Friday */
   Friday = 'FRIDAY',
+  /** Monday */
   Monday = 'MONDAY',
+  /** Saturday */
   Saturday = 'SATURDAY',
+  /** Sunday */
   Sunday = 'SUNDAY',
+  /** Thursday */
   Thursday = 'THURSDAY',
+  /** Tuesday */
   Tuesday = 'TUESDAY',
+  /** Wednesday */
   Wednesday = 'WEDNESDAY'
 }
 
@@ -21524,7 +24004,9 @@ export type WidgetParentInput = {
 
 /** The kind of parent container where the widget will be placed. */
 export enum WidgetParentKind {
+  /** Widget placed in a specific board view */
   BoardView = 'BOARD_VIEW',
+  /** Widget placed in a dashboard */
   Dashboard = 'DASHBOARD'
 }
 
@@ -21561,7 +24043,9 @@ export type WidgetSchemaInfo = {
 
 /** Outcome of loading a single widget within loadDashboardData. */
 export enum WidgetStatus {
+  /** Widget failed to load; see error field for details. */
   Error = 'ERROR',
+  /** Widget data was loaded successfully. */
   Ok = 'OK'
 }
 
@@ -21801,6 +24285,7 @@ export type WorkflowBlockInputField = {
 
 /** The kind of workflow block. This is the type of the block that is used in the UI */
 export enum WorkflowBlockKind {
+  /** A wait block */
   Wait = 'WAIT'
 }
 
@@ -21831,9 +24316,10 @@ export type WorkflowBuilderCreateResult = {
 
 /** Privacy level for a workflow */
 export enum WorkflowBuilderPrivacyKind {
+  /** Workflow is private and restricted */
   Private = 'PRIVATE',
-  Public = 'PUBLIC',
-  Shareable = 'SHAREABLE'
+  /** Workflow is publicly accessible (Main) */
+  Public = 'PUBLIC'
 }
 
 /** Identifiers for a published workflow */
@@ -21853,12 +24339,31 @@ export type WorkflowCustomizationInput = {
 
 /** Valid cutoff points in the workflow where synchronous execution stops and async continuation begins. */
 export enum WorkflowCutoffNode {
+  /** Stop after join node. Returns after all content (items, automations, widgets) is created. */
   ContentCreation = 'CONTENT_CREATION',
+  /** Stop after discovery node. Returns after discovery Q&A, before planning. */
   Discovery = 'DISCOVERY',
+  /** Do not run any workflow steps synchronously. Enqueues the job and returns immediately. */
   Immediately = 'IMMEDIATELY',
+  /** Stop after planning node. Returns plan only, no entities are created. */
   Planning = 'PLANNING',
+  /** Stop after init-entities node. Returns structure preview with board/dashboard IDs. */
   StructureCreation = 'STRUCTURE_CREATION'
 }
+
+/** Result of discarding a workflow draft */
+export type WorkflowDraftDiscardResult = {
+  __typename?: 'WorkflowDraftDiscardResult';
+  /** The ID of the new draft, copied from the live version of the workflow */
+  workflow_draft_id: Scalars['ID']['output'];
+};
+
+/** Result of promoting a workflow draft */
+export type WorkflowDraftPromoteResult = {
+  __typename?: 'WorkflowDraftPromoteResult';
+  /** The ID of the workflow that is now live */
+  workflow_live_id: Scalars['ID']['output'];
+};
 
 /** Hierarchy level the workflow is hosted in */
 export type WorkflowHostData = {
@@ -21962,6 +24467,7 @@ export type WorkflowStep = {
 
 /** The context where a workflow template can be accessed */
 export enum WorkflowTemplateContext {
+  /** Using this context will make the template accessible in the Lite Builder */
   LiteBuilder = 'LITE_BUILDER'
 }
 
@@ -22013,10 +24519,15 @@ export type WorkflowVariableSchema = {
 };
 
 export enum WorkflowVariableSourceKind {
+  /** A value fetched from an external context provider */
   ExternalContextProvider = 'external_context_provider',
+  /** Points to the host ID value where the workflow is hosted (board ID, object ID, account ID, etc.). It's auto calculated during when the workflow runs */
   HostMetadata = 'host_metadata',
+  /** A value from a previous node output */
   NodeResults = 'node_results',
+  /** A value from a reference to another workflow variable */
   Reference = 'reference',
+  /** A value defined by the user */
   UserConfig = 'user_config'
 }
 
@@ -22111,22 +24622,31 @@ export type WorkspaceIcon = {
 
 /** The workspace kinds available. */
 export enum WorkspaceKind {
+  /** Closed workspace, available to enterprise only. */
   Closed = 'closed',
+  /** Open workspace. */
   Open = 'open',
+  /** Template workspace. */
   Template = 'template'
 }
 
 /** The membership kind of the user in the workspace. */
 export enum WorkspaceMembershipKind {
+  /** All accessible workspaces */
   All = 'all',
+  /** Workspace member. */
   Member = 'member'
 }
 
 /** Why a vibe app install workspace permissions sync did or did not update the permitted workspaces */
 export enum WorkspacePermissionsSyncReason {
+  /** The app has no platform app to update */
   NoPlatformApp = 'NO_PLATFORM_APP',
+  /** No workspaces could be resolved, so the permitted workspaces were left unchanged */
   NoWorkspaces = 'NO_WORKSPACES',
+  /** The permitted workspaces were replaced with the current ones */
   Synced = 'SYNCED',
+  /** The app is not published */
   Unpublished = 'UNPUBLISHED'
 }
 
@@ -22139,24 +24659,35 @@ export type WorkspaceSettings = {
 
 /** The workspace subscriber kind. */
 export enum WorkspaceSubscriberKind {
+  /** Workspace owner. */
   Owner = 'owner',
+  /** Workspace subscriber. */
   Subscriber = 'subscriber'
 }
 
 /** Options to order by. */
 export enum WorkspacesOrderBy {
+  /** The rank order of the workspace creation time (desc). */
   CreatedAt = 'created_at'
 }
 
 /** The account product kinds available for workspaces query. */
 export enum WorkspacesQueryAccountProductKind {
+  /** monday work management */
   Core = 'core',
+  /** monday CRM */
   Crm = 'crm',
+  /** workforms */
   Forms = 'forms',
+  /** monday marketer */
   Marketing = 'marketing',
+  /** monday projects */
   ProjectManagement = 'project_management',
+  /** monday service */
   Service = 'service',
+  /** monday dev */
   Software = 'software',
+  /** canvas */
   Whiteboard = 'whiteboard'
 }
 

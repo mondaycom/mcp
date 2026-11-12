@@ -9,22 +9,22 @@ import {
 import { GetBoardKnowledgeQuery } from '../../../../monday-graphql/generated/graphql.dev/graphql';
 import { getBoardInfo, getBoardInfoJustColumns, getBoardInfoViewIndex } from './get-board-info.graphql';
 import { getBoardKnowledge } from './get-board-info.graphql.dev';
-import {
-  BoardInfoData,
-  BoardInfoJustColumnsData,
-  formatBoardInfoAsJson,
-  resolveViewIdsByName,
-} from './helpers';
+import { BoardInfoData, BoardInfoJustColumnsData, formatBoardInfoAsJson, resolveViewIdsByName } from './helpers';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations, MondayApiToolContext } from './../base-monday-api-tool';
 import { NonDeprecatedColumnType } from 'src/utils/types';
+import { fetchBoardInfoV2, formatBoardInfoV2Response } from './get-board-info-v2';
 
 export const GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG = 'mcp-get-board-info-entity-knowledge';
+// When on, get_board_info uses the faster v2 flow (single board query, no subitems-board / view-index round trips).
+// Off by default, including for hosts that pass no flagChecker.
+export const GET_BOARD_INFO_V2_FLAG = 'mcp-get-board-info-v2';
 // Board.creator is nullable from this version. Earlier versions null the whole board when it can't be resolved.
 export const GET_BOARD_INFO_API_VERSION = '2027-04';
 const BOARD_KNOWLEDGE_TIMEOUT_MS = 1_000;
 
-export const getBoardInfoToolSchema = {
+// v1 resolves view names with a lean id/name index query first; v2 filters one full views fetch.
+const buildGetBoardInfoToolSchema = (v2: boolean) => ({
   boardId: z.number().describe('The id of the board to get information for'),
   includeKnowledge: z
     .boolean()
@@ -47,12 +47,16 @@ export const getBoardInfoToolSchema = {
             .array(z.string())
             .optional()
             .describe(
-              'Optional. Restrict returned views to these view names (case-insensitive). The tool resolves names via a lean id/name index query first to avoid downloading every view on large boards.',
+              v2
+                ? 'Optional. Restrict returned views to these view names (case-insensitive). Only the matching views are returned.'
+                : 'Optional. Restrict returned views to these view names (case-insensitive). The tool resolves names via a lean id/name index query first to avoid downloading every view on large boards.',
             ),
           only: z
             .boolean()
             .optional()
-            .describe('Optional. When true, omit columns and return only views plus the board metadata needed around them.'),
+            .describe(
+              'Optional. When true, omit columns and return only views plus the board metadata needed around them.',
+            ),
         })
         .optional()
         .describe('Optional view selection controls.'),
@@ -62,14 +66,18 @@ export const getBoardInfoToolSchema = {
           only: z
             .boolean()
             .optional()
-            .describe('Optional. When true, omit views and return only columns plus the board metadata needed around them.'),
+            .describe(
+              'Optional. When true, omit views and return only columns plus the board metadata needed around them.',
+            ),
         })
         .optional()
         .describe('Optional column selection controls.'),
     })
     .optional()
     .describe('Optional response-shaping filters for large boards. Omit to return the full board info payload.'),
-};
+});
+
+export const getBoardInfoToolSchema = buildGetBoardInfoToolSchema(false);
 
 type ResolvedBoardInfoFilters = {
   columnIds: string[] | undefined;
@@ -106,8 +114,8 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
     return (
       'Get comprehensive board information including metadata, structure, owners, and configuration. ' +
       knowledgeDescription +
-      'Set includeSubscribers to true to also return the board\'s subscribers (people and AI agents) and team subscribers. ' +
-      'Also returns the board\'s views (e.g. table views, filter views) — each view includes its id, name, type, and a structured filter object. ' +
+      "Set includeSubscribers to true to also return the board's subscribers (people and AI agents) and team subscribers. " +
+      "Also returns the board's views (e.g. table views, filter views) — each view includes its id, name, type, and a structured filter object. " +
       'On large boards, ALWAYS narrow the response: use filters.views.names or filters.views.ids when you only need specific views, and/or filters.columns.ids when you only need specific columns. Set filters.views.only or filters.columns.only when you want just that section — full views[].settings across many views can be multi-MB. ' +
       'The response includes hierarchy_type which indicates if the board is a multi-level board ("multi_level") where items can have nested subitems up to 5 levels deep on the same board. On multi-level boards, subitems share the same columns as parent items and subItemColumns will be null. ' +
       'Call this FIRST whenever you are not already familiar with a board structure (column IDs, column types, column revisions, status labels) — before reading or writing its data, or before any tool that declares this as a required precondition (e.g. get_board_items_page, board_insights, create_item, create_items, update_items, change_item_column_values, update_column, create_view, create_view_table, update_view, update_view_table). ' +
@@ -117,10 +125,14 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
   }
 
   getInputSchema(): typeof getBoardInfoToolSchema {
-    return getBoardInfoToolSchema;
+    return buildGetBoardInfoToolSchema(this.isV2Enabled());
   }
 
   protected async executeInternal(input: ToolInputType<typeof getBoardInfoToolSchema>): Promise<ToolOutputType<never>> {
+    if (this.isV2Enabled()) {
+      return this.executeV2(input);
+    }
+
     const { columnIds, viewIds, includeColumns, includeViews, unmatchedViewNames, availableViewNames } =
       await this.resolveFiltersAsync(input);
 
@@ -186,6 +198,54 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
     };
   }
 
+  private async executeV2(input: ToolInputType<typeof getBoardInfoToolSchema>): Promise<ToolOutputType<never>> {
+    const knowledgeRequested = input.includeKnowledge === true;
+    const boardId = input.boardId.toString();
+    const knowledgeRequest =
+      knowledgeRequested && this.isKnowledgeEnabled()
+        ? this.mondayApi
+            .request<GetBoardKnowledgeQuery>(
+              getBoardKnowledge,
+              { boardId },
+              { versionOverride: 'dev', timeout: BOARD_KNOWLEDGE_TIMEOUT_MS },
+            )
+            .catch((err: unknown) => {
+              this.context?.deps?.logger?.warn(
+                { err, boardId: input.boardId, timeoutMs: BOARD_KNOWLEDGE_TIMEOUT_MS },
+                'Failed to fetch board knowledge',
+              );
+              return null;
+            })
+        : Promise.resolve(null);
+
+    const [outcome, knowledgeRes] = await Promise.all([fetchBoardInfoV2(this.mondayApi, input), knowledgeRequest]);
+
+    if (outcome.kind === 'not_found') {
+      return { content: `Board with id ${input.boardId} not found or you don't have access to it.` };
+    }
+    if (outcome.kind === 'no_matching_views') {
+      const available = outcome.available.length > 0 ? outcome.available.join(', ') : '(none)';
+      return {
+        content:
+          `None of the requested view names matched on board ${input.boardId}. ` +
+          `Requested: ${outcome.requested.join(', ')}. Available views: ${available}.`,
+      };
+    }
+
+    return {
+      content: formatBoardInfoV2Response(
+        outcome.board,
+        outcome.unmatchedViewNames,
+        knowledgeRes?.entity_knowledge ?? null,
+        knowledgeRequested,
+      ),
+    };
+  }
+
+  private isV2Enabled(): boolean {
+    return this.context?.deps?.flagChecker?.(GET_BOARD_INFO_V2_FLAG) ?? false;
+  }
+
   private isKnowledgeEnabled(): boolean {
     return this.context?.deps?.flagChecker?.(GET_BOARD_INFO_ENTITY_KNOWLEDGE_FLAG) ?? true;
   }
@@ -247,9 +307,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
       boardId: input.boardId.toString(),
     });
     const indexedViews = indexRes.boards?.[0]?.views ?? [];
-    const availableViewNames = indexedViews
-      .map((view) => view?.name)
-      .filter((name): name is string => Boolean(name));
+    const availableViewNames = indexedViews.map((view) => view?.name).filter((name): name is string => Boolean(name));
 
     const { viewIds: namedIds, unmatchedViewNames } = resolveViewIdsByName(indexedViews, viewsFilter?.names ?? []);
     const merged = [...new Set([...(viewsFilter?.ids ?? []), ...namedIds])];
