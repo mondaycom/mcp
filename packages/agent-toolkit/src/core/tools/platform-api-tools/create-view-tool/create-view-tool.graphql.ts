@@ -20,6 +20,7 @@ export const createView = gql`
       id
       name
       type
+      view_specific_data_str
     }
   }
 `;

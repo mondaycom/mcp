@@ -55,7 +55,7 @@ export const updateViewToolSchema = {
     .any()
     .optional()
     .describe(
-      'Type-specific view settings as a JSON object (e.g. column visibility, group_by for TABLE). The shape varies by view type — call get_view_schema_by_type with the same ViewKind to discover the supported structure. For TABLE views, prefer the dedicated update_view_table tool which exposes a strongly-typed settings field.',
+      'Type-specific view settings as a JSON object. Only TABLE views accept settings on update (column visibility, group_by); prefer the dedicated update_view_table tool, which types them. FORM, DASHBOARD and APP views accept no settings; configure a form with update_form and form_questions_editor instead.',
     ),
 };
 
@@ -84,9 +84,7 @@ Example filter for status column: { "rules": [{ "column_id": "status", "compare_
     return updateViewToolSchema;
   }
 
-  protected async executeInternal(
-    input: ToolInputType<typeof updateViewToolSchema>,
-  ): Promise<ToolOutputType<never>> {
+  protected async executeInternal(input: ToolInputType<typeof updateViewToolSchema>): Promise<ToolOutputType<never>> {
     const variables = {
       viewId: input.viewId,
       boardId: input.boardId,
@@ -97,7 +95,18 @@ Example filter for status column: { "rules": [{ "column_id": "status", "compare_
       settings: input.settings,
     } as UpdateViewMutationVariables;
 
-    const res = await this.mondayApi.request<UpdateViewMutation>(updateView, variables);
+    let res: UpdateViewMutation;
+    try {
+      res = await this.mondayApi.request<UpdateViewMutation>(updateView, variables);
+    } catch (error) {
+      if (input.type === ViewKind.Form && input.settings !== undefined) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `${message}\n\nupdate_view accepts no settings for FORM views. Configure the form with its formToken, which get_board_info returns on each FORM view: update_form changes the title, description, name question and question order, and form_questions_editor creates, edits or deletes questions (text, visibility, required). Call update_view on a FORM view only to rename it.`,
+        );
+      }
+      throw error;
+    }
 
     if (!res.update_view) {
       return { content: 'Failed to update view - no response from API' };

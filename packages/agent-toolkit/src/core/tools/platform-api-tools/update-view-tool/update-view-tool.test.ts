@@ -179,6 +179,52 @@ describe('UpdateViewTool', () => {
       expect(result.content[0].text).toContain('Network error: Connection timeout');
     });
 
+    it('should point FORM settings rejections to the form tools', async () => {
+      mocks.setError('data must NOT have additional properties');
+
+      const result = await callToolByNameRawAsync('update_view', {
+        viewId: 'view_123',
+        boardId: '123',
+        type: ViewKind.Form,
+        settings: { formTitle: 'Intake', columns: { name: { question: 'Name', visible: true } } },
+      });
+
+      const text = result.content[0].text;
+      expect(text).toContain('data must NOT have additional properties');
+      expect(text).toContain('update_view accepts no settings for FORM views');
+      expect(text).toContain('get_board_info');
+      expect(text).toContain('update_form');
+      expect(text).toContain('form_questions_editor');
+    });
+
+    it('should not add form guidance to FORM errors without settings', async () => {
+      mocks.setError('Network error: Connection timeout');
+
+      const result = await callToolByNameRawAsync('update_view', {
+        viewId: 'view_123',
+        boardId: '123',
+        type: ViewKind.Form,
+        name: 'Renamed form',
+      });
+
+      expect(result.content[0].text).toContain('Network error: Connection timeout');
+      expect(result.content[0].text).not.toContain('form_questions_editor');
+    });
+
+    it('should not add form guidance to TABLE settings errors', async () => {
+      mocks.setError('data must NOT have additional properties');
+
+      const result = await callToolByNameRawAsync('update_view', {
+        viewId: 'view_123',
+        boardId: '123',
+        type: ViewKind.Table,
+        settings: { unknown_key: true },
+      });
+
+      expect(result.content[0].text).toContain('data must NOT have additional properties');
+      expect(result.content[0].text).not.toContain('form_questions_editor');
+    });
+
     it('should fail validation when viewId is missing', async () => {
       const result = await callToolByNameRawAsync('update_view', {
         boardId: '123',
