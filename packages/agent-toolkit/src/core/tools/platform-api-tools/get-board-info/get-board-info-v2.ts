@@ -4,7 +4,7 @@ import {
   GetBoardInfoV2QueryVariables,
 } from '../../../../monday-graphql/generated/graphql.dev/graphql';
 import { getBoardInfoV2 } from './get-board-info.graphql.dev';
-import { BoardInfoResponse, BoardKnowledgeData, resolveViewIdsByName } from './helpers';
+import { BoardInfoResponse, BoardKnowledgeData, resolveViewIdsByName, toViewOutput } from './helpers';
 import { NonDeprecatedColumnType } from 'src/utils/types';
 
 // subitem_columns is introduced in 2027-01 and Board.creator is nullable from 2027-04.
@@ -90,7 +90,7 @@ export const fetchBoardInfoV2 = async (mondayApi: ApiClient, input: BoardInfoV2I
       ...boardFields,
       // @include(false) omits these fields from the GraphQL response — normalize to empty arrays.
       columns: board.columns ?? [],
-      views,
+      views: views.map(toViewOutput),
       subItemColumns: resolveSubItemColumns(board),
     } as BoardInfoResponse['board'],
     unmatchedViewNames,

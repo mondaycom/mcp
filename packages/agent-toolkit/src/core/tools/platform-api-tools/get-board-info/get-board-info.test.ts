@@ -285,6 +285,38 @@ describe('formatBoardInfoAsJson - views', () => {
     views: [],
   } as unknown as BoardInfoData;
 
+  it('exposes formToken for form views and drops the raw view data string', () => {
+    const board: BoardInfoData = {
+      ...baseBoard,
+      views: [
+        {
+          id: 'form_1',
+          name: 'Signup',
+          type: 'FormBoardView',
+          settings: {},
+          filter: null,
+          sort: null,
+          view_specific_data_str: '{"token":"tok123","disabled":false}',
+        },
+        {
+          id: 'table_1',
+          name: 'Main',
+          type: 'TableBoardView',
+          settings: {},
+          filter: null,
+          sort: null,
+          view_specific_data_str: '',
+        },
+      ],
+    } as unknown as BoardInfoData;
+
+    const result = formatBoardInfoAsJson(board, null);
+
+    expect(result.board.views[0].formToken).toBe('tok123');
+    expect(result.board.views[1].formToken).toBeUndefined();
+    expect(result.board.views.every((view) => !('view_specific_data_str' in view))).toBe(true);
+  });
+
   it('should include views in the JSON response', () => {
     const board: BoardInfoData = {
       ...baseBoard,

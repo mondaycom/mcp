@@ -105,6 +105,7 @@ export const getBoardInfo = gql`
         settings
         filter
         sort
+        view_specific_data_str
       }
     }
   }
