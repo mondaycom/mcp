@@ -11,6 +11,7 @@ import { createView } from './create-view-tool.graphql';
 import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { ColumnTypeInfoFetchMode } from '../get-column-type-info/get-column-type-info-fetch-mode';
+import { parseFormViewToken } from '../utils/form-view-token';
 
 export const createViewToolSchema = {
   boardId: z.string().describe('The board ID to create the view on'),
@@ -98,8 +99,14 @@ Example filter for status column: { "rules": [{ "column_id": "status", "compare_
       return { content: 'Failed to create view - no response from API' };
     }
 
+    const created = `View "${res.create_view.name}" (ID: ${res.create_view.id}, type: ${res.create_view.type}) successfully created`;
+    const formToken = parseFormViewToken(res.create_view.view_specific_data_str);
+    if (!formToken) {
+      return { content: created };
+    }
+
     return {
-      content: `View "${res.create_view.name}" (ID: ${res.create_view.id}, type: ${res.create_view.type}) successfully created`,
+      content: `${created}. formToken: ${formToken}. Configure this form with update_form and form_questions_editor using this formToken; update_view cannot change form settings.`,
     };
   }
 }

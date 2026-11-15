@@ -16,6 +16,44 @@ describe('CreateViewTool', () => {
   });
 
   describe('Success Cases', () => {
+    it('returns the formToken when a FORM view is created', async () => {
+      mocks.setResponse({
+        create_view: {
+          id: 'view_form',
+          name: 'Signup',
+          type: 'FormBoardView',
+          view_specific_data_str: '{"token":"abc123token","disabled":false,"region":"use1"}',
+        },
+      });
+
+      const result = await callToolByNameRawAsync('create_view', { boardId: '123', type: ViewKind.Form, name: 'Signup' });
+
+      expect(result.content[0].text).toContain('successfully created');
+      expect(result.content[0].text).toContain('formToken: abc123token');
+      expect(result.content[0].text).toContain('update_form');
+    });
+
+    it('does not mention a formToken for non-form views', async () => {
+      mocks.setResponse({
+        create_view: { id: 'view_t', name: 'Table', type: 'BoardTableView', view_specific_data_str: '' },
+      });
+
+      const result = await callToolByNameRawAsync('create_view', { boardId: '123', type: ViewKind.Table });
+
+      expect(result.content[0].text).not.toContain('formToken');
+    });
+
+    it('does not mention a formToken when the form view data is not valid JSON', async () => {
+      mocks.setResponse({
+        create_view: { id: 'view_f', name: 'Form', type: 'FormBoardView', view_specific_data_str: 'not-json' },
+      });
+
+      const result = await callToolByNameRawAsync('create_view', { boardId: '123', type: ViewKind.Form });
+
+      expect(result.content[0].text).toContain('successfully created');
+      expect(result.content[0].text).not.toContain('formToken');
+    });
+
     it('should create a view with minimal parameters', async () => {
       mocks.setResponse({
         create_view: {

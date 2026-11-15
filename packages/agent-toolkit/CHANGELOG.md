@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.78.9
+
+### FORM views: `formToken` is returned, and `update_view` points FORM settings to the form tools
+
+- `create_view` and `get_board_info` (both the default and the `mcp-get-board-info-v2` flows) select `view_specific_data_str` and return `formToken` on each FORM view, so `get_form`, `update_form` and `form_questions_editor` can be called on a form that was created or found as a board view. The raw `view_specific_data_str` is not returned.
+- The monday API accepts no `settings` for FORM, DASHBOARD or APP views on `update_view` (the update schema for those types is an empty object with `additionalProperties: false`). The `settings` description no longer points to `get_view_schema_by_type`, which is not a tool, and says only TABLE views accept settings.
+- When `update_view` fails for a FORM view called with `settings`, the error keeps the API message and adds which tool to use instead: `update_form` for the title, description, name question and question order, and `form_questions_editor` for the questions. Successful calls are unchanged and no API call is added.
+
 ## 5.78.8
 
 ### `get_board_info` v2 flow behind the `mcp-get-board-info-v2` feature flag
