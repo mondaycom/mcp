@@ -23,8 +23,9 @@ export const GET_BOARD_INFO_V2_FLAG = 'mcp-get-board-info-v2';
 export const GET_BOARD_INFO_API_VERSION = '2027-04';
 const BOARD_KNOWLEDGE_TIMEOUT_MS = 1_000;
 
-// v1 resolves view names with a lean id/name index query first; v2 filters one full views fetch.
-const buildGetBoardInfoToolSchema = (v2: boolean) => ({
+// The input schema must not depend on feature flags: gateway pods cache their own tool lists, so a flag-dependent
+// schema changes the tools mid-run and invalidates the LLM prompt cache.
+export const getBoardInfoToolSchema = {
   boardId: z.number().describe('The id of the board to get information for'),
   includeKnowledge: z
     .boolean()
@@ -47,9 +48,7 @@ const buildGetBoardInfoToolSchema = (v2: boolean) => ({
             .array(z.string())
             .optional()
             .describe(
-              v2
-                ? 'Optional. Restrict returned views to these view names (case-insensitive). Only the matching views are returned.'
-                : 'Optional. Restrict returned views to these view names (case-insensitive). The tool resolves names via a lean id/name index query first to avoid downloading every view on large boards.',
+              'Optional. Restrict returned views to these view names (case-insensitive). Only the matching views are returned.',
             ),
           only: z
             .boolean()
@@ -75,9 +74,7 @@ const buildGetBoardInfoToolSchema = (v2: boolean) => ({
     })
     .optional()
     .describe('Optional response-shaping filters for large boards. Omit to return the full board info payload.'),
-});
-
-export const getBoardInfoToolSchema = buildGetBoardInfoToolSchema(false);
+};
 
 type ResolvedBoardInfoFilters = {
   columnIds: string[] | undefined;
@@ -125,7 +122,7 @@ export class GetBoardInfoTool extends BaseMondayApiTool<typeof getBoardInfoToolS
   }
 
   getInputSchema(): typeof getBoardInfoToolSchema {
-    return buildGetBoardInfoToolSchema(this.isV2Enabled());
+    return getBoardInfoToolSchema;
   }
 
   protected async executeInternal(input: ToolInputType<typeof getBoardInfoToolSchema>): Promise<ToolOutputType<never>> {

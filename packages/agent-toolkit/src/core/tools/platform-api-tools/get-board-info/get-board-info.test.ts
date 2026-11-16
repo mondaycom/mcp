@@ -16,6 +16,8 @@ import {
   EntityKnowledgeSectionKind,
   EntityKnowledgeStatus,
 } from '../../../../monday-graphql/generated/graphql.dev/graphql';
+import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import { NonDeprecatedColumnType } from 'src/utils/types';
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../test-utils/mock-api-client';
@@ -949,15 +951,16 @@ describe('GetBoardInfoTool v2 flow (feature flag)', () => {
     expect(parsed.unmatchedViewNames).toEqual(['nope']);
   });
 
-  it('describes views.names by flow: no index query when v2 is on, index query when off', () => {
-    const viewNamesDescription = (flagChecker?: () => boolean) =>
-      (
-        new GetBoardInfoTool(mocks.mockApiClient, 'test-token', { deps: { flagChecker } }).getInputSchema().filters as any
-      )._def.innerType.shape.views._def.innerType.shape.names.description as string;
+  it('returns the same input schema whether the v2 flag is on, off or unset', () => {
+    const schemaFor = (flagChecker?: () => boolean) =>
+      JSON.stringify(
+        zodToJsonSchema(
+          z.object(new GetBoardInfoTool(mocks.mockApiClient, 'test-token', { deps: { flagChecker } }).getInputSchema()),
+        ),
+      );
 
-    expect(viewNamesDescription(() => true)).not.toContain('index query');
-    expect(viewNamesDescription(() => false)).toContain('lean id/name index query');
-    expect(viewNamesDescription()).toContain('lean id/name index query');
+    expect(schemaFor(() => true)).toBe(schemaFor(() => false));
+    expect(schemaFor(() => true)).toBe(schemaFor());
   });
 
   it('returns a not-found message when the board is missing', async () => {
