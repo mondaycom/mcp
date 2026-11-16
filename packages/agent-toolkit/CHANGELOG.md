@@ -4,7 +4,7 @@
 
 ### `get_board_info` input schema no longer depends on the `mcp-get-board-info-v2` flag
 
-- The `filters.views.names` description differed with the flag on and off. Gateway pods each cache their own tool list, so one agent run could see both versions between LLM calls, which changed the tool schema mid-run and caused prompt-cache misses.
+- The `filters.views.names` description differed with the flag on and off. A host that caches its tool list could serve both versions within one agent run, which changed the tool schema mid-run and caused prompt-cache misses.
 - The description is now the same in both flows. The tool's behavior is unchanged.
 
 ## 5.78.9
