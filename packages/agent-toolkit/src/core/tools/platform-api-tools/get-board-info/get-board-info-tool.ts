@@ -23,8 +23,8 @@ export const GET_BOARD_INFO_V2_FLAG = 'mcp-get-board-info-v2';
 export const GET_BOARD_INFO_API_VERSION = '2027-04';
 const BOARD_KNOWLEDGE_TIMEOUT_MS = 1_000;
 
-// The input schema must not depend on feature flags: gateway pods cache their own tool lists, so a flag-dependent
-// schema changes the tools mid-run and invalidates the LLM prompt cache.
+// The input schema must not depend on feature flags: hosts cache tool lists, and a schema that changes mid-run
+// invalidates the LLM prompt cache.
 export const getBoardInfoToolSchema = {
   boardId: z.number().describe('The id of the board to get information for'),
   includeKnowledge: z
