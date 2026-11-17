@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.78.11
+
+### `get_automation_statistics` sends `board_id` as an ID on API version `2027-04`
+
+- The request is pinned to API version `2027-04`, where `board_id` is an `ID`. The toolkit default stays `2027-01`, and that version still types `board_id` as `Int`, which rejects board ids above 2^31.
+- `board_id` is sent as a validated digit string. Blank values, `0`, and values above `Number.MAX_SAFE_INTEGER` are rejected before the API call.
+
 ## 5.78.10
 
 ### `get_board_info` input schema no longer depends on the `mcp-get-board-info-v2` flag
