@@ -43,7 +43,7 @@ describe('GetAutomationStatisticsTool', () => {
       expect(parsed.scope).toBe('account-wide');
     });
 
-    it('should pass boardId as integer and userIds in filters', async () => {
+    it('passes boardId as a string and userIds in filters', async () => {
       mocks.setResponseOnce({
         account_trigger_statistics: { id: '1', success: 0, failure: 0, total: 0 },
       });
@@ -56,7 +56,8 @@ describe('GetAutomationStatisticsTool', () => {
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('account_trigger_statistics'),
-        { filters: { board_id: 5678, user_ids: [1, 2] } },
+        { filters: { board_id: '5678', user_ids: [1, 2] } },
+        { versionOverride: '2027-04' },
       );
     });
 
@@ -124,8 +125,9 @@ describe('GetAutomationStatisticsTool', () => {
         expect.stringContaining('account_triggers_statistics_by_entity_id'),
         {
           runStatus: 'success',
-          filters: { board_id: 1, automation_ids: [10, 20], user_ids: [5] },
+          filters: { board_id: '1', automation_ids: [10, 20], user_ids: [5] },
         },
+        { versionOverride: '2027-04' },
       );
     });
   });
@@ -154,13 +156,31 @@ describe('GetAutomationStatisticsTool', () => {
       expect(result.content[0].text).toContain('Failed to get automation statistics');
     });
 
-    it('should reject invalid boardId format', async () => {
+    it('sends a board id above 32-bit unchanged as a string', async () => {
+      mocks.setResponseOnce({
+        account_trigger_statistics: { id: '1', success: 1, failure: 0, total: 1 },
+      });
+
+      await callToolByNameRawAsync('get_automation_statistics', {
+        breakdown: 'totals',
+        boardId: '18435225946',
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('account_trigger_statistics'),
+        { filters: { board_id: '18435225946', user_ids: undefined } },
+        { versionOverride: '2027-04' },
+      );
+    });
+
+    it.each(['abc', ' ', '0', '1e3', '0x10', '9007199254740992'])('rejects invalid boardId %j', async (boardId) => {
       const result = await callToolByNameRawAsync('get_automation_statistics', {
         breakdown: 'totals',
-        boardId: 'abc',
+        boardId,
       });
 
       expect(result.content[0].text).toContain('Invalid boardId');
+      expect(mocks.getMockRequest()).not.toHaveBeenCalled();
     });
   });
 });
