@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.78.10
+
+### `get_board_info` input schema no longer depends on the `mcp-get-board-info-v2` flag
+
+- The `filters.views.names` description differed with the flag on and off. A host that caches its tool list could serve both versions within one agent run, which changed the tool schema mid-run and caused prompt-cache misses.
+- The description is now the same in both flows. The tool's behavior is unchanged.
+
 ## 5.78.9
 
 ### FORM views: `formToken` is returned, and `update_view` points FORM settings to the form tools
