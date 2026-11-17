@@ -9,6 +9,9 @@ import {
   AccountTriggersByEntityQueryResult,
 } from './automation-statistics-queries';
 
+// board_id is ID from 2027-04. The toolkit default (2027-01) still types it as Int, which rejects board ids above 2^31.
+export const AUTOMATION_STATISTICS_API_VERSION = '2027-04';
+
 const TOOL_DESCRIPTION = `Aggregate automation run statistics. Read-only.
 
 Breakdowns:
@@ -63,14 +66,14 @@ export class GetAutomationStatisticsTool extends BaseMondayApiTool<typeof getAut
       };
     }
 
-    const boardIdInt = input.boardId ? toBoardIdInt(input.boardId) : undefined;
+    const boardId = input.boardId ? toBoardId(input.boardId) : undefined;
     const scope = input.boardId ? `board ${input.boardId}` : 'account-wide';
 
     try {
       if (input.breakdown === 'by_entity') {
-        return await this.runByEntity(input, boardIdInt, scope);
+        return await this.runByEntity(input, boardId, scope);
       }
-      return await this.runTotals(input, boardIdInt, scope);
+      return await this.runTotals(input, boardId, scope);
     } catch (error) {
       rethrowWithContext(error, 'get automation statistics');
     }
@@ -78,12 +81,13 @@ export class GetAutomationStatisticsTool extends BaseMondayApiTool<typeof getAut
 
   private async runTotals(
     input: ToolInputType<typeof getAutomationStatisticsToolSchema>,
-    boardIdInt: number | undefined,
+    boardId: string | undefined,
     scope: string,
   ): Promise<ToolOutputType<never>> {
     const res = await this.mondayApi.request<AccountTriggerStatisticsQueryResult>(
       getAccountTriggerStatisticsQuery,
-      { filters: { board_id: boardIdInt, user_ids: input.userIds } },
+      { filters: { board_id: boardId, user_ids: input.userIds } },
+      { versionOverride: AUTOMATION_STATISTICS_API_VERSION },
     );
 
     const stats = res.account_trigger_statistics;
@@ -96,7 +100,7 @@ export class GetAutomationStatisticsTool extends BaseMondayApiTool<typeof getAut
 
   private async runByEntity(
     input: ToolInputType<typeof getAutomationStatisticsToolSchema>,
-    boardIdInt: number | undefined,
+    boardId: string | undefined,
     scope: string,
   ): Promise<ToolOutputType<never>> {
     if (!input.runStatus) {
@@ -110,11 +114,12 @@ export class GetAutomationStatisticsTool extends BaseMondayApiTool<typeof getAut
       {
         runStatus: input.runStatus,
         filters: {
-          board_id: boardIdInt,
+          board_id: boardId,
           automation_ids: input.excludeAutomationIds,
           user_ids: input.userIds,
         },
       },
+      { versionOverride: AUTOMATION_STATISTICS_API_VERSION },
     );
 
     const stats = res.account_triggers_statistics_by_entity_id;
@@ -133,10 +138,10 @@ export class GetAutomationStatisticsTool extends BaseMondayApiTool<typeof getAut
   }
 }
 
-function toBoardIdInt(boardId: string): number {
-  const parsed = Number(boardId.trim());
-  if (!Number.isInteger(parsed) || parsed <= 0) {
+function toBoardId(boardId: string): string {
+  const normalized = boardId.trim();
+  if (!/^[1-9]\d*$/.test(normalized) || !Number.isSafeInteger(Number(normalized))) {
     throw new Error(`Invalid boardId: '${boardId}' is not a positive integer.`);
   }
-  return parsed;
+  return normalized;
 }
