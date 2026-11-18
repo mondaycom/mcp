@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.79.0
+
+### `get_user_context` returns an onboarding skill for likely new users
+
+- The tool now detects users who are likely new to monday.com. A user counts as new when both hold: the user was created within the last 14 days, and they have at most 2 boards (signup creates 1; a second appears if they tried the platform first). Docs, sub-item boards, and custom objects are not counted as boards. A missing or unparsable creation date is never treated as new.
+- For those users only, the response includes an `onboarding` object with the signals used (`userCreatedAt`, `userAgeDays`, `boardsCount`, `accountCreatedAt`) and an onboarding skill (`skill.name`, `skill.instructions`) adapted from `onboard-to-monday` in `mondaycom/skills`. The skill tells the agent to offer onboarding, not to take over a specific request.
+- The response for other users is unchanged. The query also reads `me.created_at`, `account.created_at`, and `boards(limit: 25) { id type }`.
+
 ## 5.78.11
 
 ### `get_automation_statistics` sends `board_id` as an ID on API version `2027-04`

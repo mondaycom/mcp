@@ -6,15 +6,21 @@ export const getUserContextQuery = gql`
       id
       name
       title
+      created_at
       account {
         tier
         active_members_count
         is_during_trial
+        created_at
         products {
           kind
           tier
         }
       }
+    }
+    boards(limit: 25, state: active) {
+      id
+      type
     }
     favorites {
       object {

@@ -6,6 +6,7 @@ import { GetUserContextQuery } from '../../../../monday-graphql/generated/graphq
 import { GetFavoriteDetailsQuery, GraphqlMondayObject } from '../../../../monday-graphql/generated/graphql/graphql';
 import { Favorite, RelevantBoard, RelevantDoc, RelevantPerson } from './user-context-tool.types';
 import { TYPE_TO_QUERY_VAR, TYPE_TO_RESPONSE_KEY } from './user-context-tool.consts';
+import { getOnboardingContext } from './user-context-onboarding';
 
 export class UserContextTool extends BaseMondayApiTool<undefined> {
   name = 'get_user_context';
@@ -29,6 +30,8 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     - Get user's most relevant docs based on load frequency and recency
     - Get user's most relevant people based on interaction frequency and recency
     - Reduce the need for search requests by knowing user's commonly accessed items
+
+    If the user is likely new to monday.com, the response also includes an "onboarding" object with an onboarding skill. Follow its instructions to help the user get started.
     `;
   }
 
@@ -37,7 +40,7 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
   }
 
   protected async executeInternal(): Promise<ToolOutputType<never>> {
-    const { me, favorites, intelligence } = await this.mondayApi.request<GetUserContextQuery>(
+    const { me, boards, favorites, intelligence } = await this.mondayApi.request<GetUserContextQuery>(
       getUserContextQuery,
       {},
       { versionOverride: 'dev' },
@@ -54,7 +57,9 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     const relevantDocs = this.extractRelevantDocs(intelligence);
     const relevantPeople = this.extractRelevantPeople(intelligence);
 
-    const { account, ...user } = me;
+    const onboarding = getOnboardingContext(me, boards);
+
+    const { account, created_at: _userCreatedAt, ...user } = me;
     const accountContext = account
       ? {
           tier: account.tier,
@@ -71,6 +76,7 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
       relevantBoards,
       relevantDocs,
       relevantPeople,
+      ...(onboarding && { onboarding }),
     };
     return { content: { message: 'User context', ...output } };
   }

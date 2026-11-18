@@ -2,7 +2,8 @@ import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../test-utils/mock-api-client';
 import { UserContextTool } from './user-context-tool';
 import { GraphqlMondayObject, GetFavoriteDetailsQuery } from 'src/monday-graphql/generated/graphql/graphql';
-import { GetUserContextQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { BoardObjectType, GetUserContextQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
+import { ONBOARDING_SKILL_INSTRUCTIONS, ONBOARDING_SKILL_NAME } from './onboarding-skill';
 
 describe('UserContextTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -17,6 +18,7 @@ describe('UserContextTool', () => {
       id: '123',
       name: 'John Doe',
       title: 'Product Manager',
+      created_at: '2022-03-07T11:16:49Z',
       account: {
         tier: 'enterprise',
         active_members_count: 150,
@@ -229,5 +231,99 @@ describe('UserContextTool', () => {
     mocks.setError('Unauthorized');
     const result = await callToolByNameRawAsync('get_user_context', {});
     expect(result.content[0].text).toBe('Failed to execute tool get_user_context: Unauthorized');
+  });
+
+  describe('onboarding', () => {
+    const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const board = (id: string, type: BoardObjectType = BoardObjectType.Board) => ({ id, type });
+
+    const newUserResponse = (createdAt: string | null, boards: unknown[]) => ({
+      me: {
+        id: '123',
+        name: 'New User',
+        title: null,
+        created_at: createdAt,
+        account: {
+          tier: 'free',
+          active_members_count: 1,
+          is_during_trial: true,
+          created_at: '2026-11-17T10:00:00Z',
+          products: [],
+        },
+      },
+      boards,
+      favorites: [],
+      intelligence: null,
+    });
+
+    it('returns the onboarding skill for a recent user with the signup board only', async () => {
+      const createdAt = daysAgo(1);
+      mocks.setResponseOnce(newUserResponse(createdAt, [board('1')]));
+
+      const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
+
+      expect(parsed.onboarding).toEqual({
+        isLikelyNewUser: true,
+        signals: {
+          userCreatedAt: createdAt,
+          userAgeDays: 1,
+          boardsCount: 1,
+          accountCreatedAt: '2026-11-17T10:00:00Z',
+        },
+        skill: { name: ONBOARDING_SKILL_NAME, instructions: ONBOARDING_SKILL_INSTRUCTIONS },
+      });
+      expect(parsed.user).toEqual({ id: '123', name: 'New User', title: null });
+      expect(parsed.account).not.toHaveProperty('created_at');
+    });
+
+    it('counts only parent boards, so docs and sub-item boards do not hide a new user', async () => {
+      mocks.setResponseOnce(
+        newUserResponse(daysAgo(3), [
+          board('1'),
+          board('2'),
+          board('3', BoardObjectType.SubItemsBoard),
+          board('4', BoardObjectType.Document),
+          board('5', BoardObjectType.CustomObject),
+          null,
+        ]),
+      );
+
+      const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
+
+      expect(parsed.onboarding.signals.boardsCount).toBe(2);
+    });
+
+    it('does not return the skill when the user has more than two boards', async () => {
+      mocks.setResponseOnce(newUserResponse(daysAgo(1), [board('1'), board('2'), board('3')]));
+
+      const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
+
+      expect(parsed).not.toHaveProperty('onboarding');
+    });
+
+    it('does not return the skill when the user was created more than 14 days ago', async () => {
+      mocks.setResponseOnce(newUserResponse(daysAgo(15), [board('1')]));
+
+      const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
+
+      expect(parsed).not.toHaveProperty('onboarding');
+    });
+
+    it.each([null, 'not-a-date'])('does not return the skill when created_at is %p', async (createdAt) => {
+      mocks.setResponseOnce(newUserResponse(createdAt, [board('1')]));
+
+      const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
+
+      expect(parsed).not.toHaveProperty('onboarding');
+    });
+
+    it('does not return the skill for an established user', async () => {
+      mocks.setResponseOnce(mockUserContextResponse);
+      mocks.setResponseOnce(mockFavoriteDetailsQuery);
+
+      const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
+
+      expect(parsed).not.toHaveProperty('onboarding');
+    });
   });
 });
