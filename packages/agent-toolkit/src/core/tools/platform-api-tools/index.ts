@@ -83,6 +83,7 @@ import { ConfigureAiColumnTool } from './configure-ai-column-tool/configure-ai-c
 import { RemoveAiFromColumnTool } from './remove-ai-from-column-tool/remove-ai-from-column-tool';
 import { SubmitBugOrFeatureRequestTool } from './submit-bug-or-feature-request-tool/submit-bug-or-feature-request-tool';
 import { GetMondayKnowledgeTool } from './get-monday-knowledge/get-monday-knowledge';
+import { OnboardToMondayTool } from './onboard-to-monday-tool/onboard-to-monday-tool';
 
 export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   DeleteItemTool,
@@ -173,6 +174,7 @@ export const allGraphqlApiTools: BaseMondayApiToolConstructor[] = [
   RemoveAiFromColumnTool,
   SubmitBugOrFeatureRequestTool,
   GetMondayKnowledgeTool,
+  OnboardToMondayTool,
 ];
 
 export * from './all-monday-api-tool';
@@ -256,5 +258,6 @@ export * from './configure-ai-column-tool/configure-ai-column-tool';
 export * from './remove-ai-from-column-tool/remove-ai-from-column-tool';
 export * from './submit-bug-or-feature-request-tool/submit-bug-or-feature-request-tool';
 export * from './get-monday-knowledge/get-monday-knowledge';
+export * from './onboard-to-monday-tool/onboard-to-monday-tool';
 // Monday Dev Tools
 export * from '../monday-dev-tools';

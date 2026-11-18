@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.79.0
+
+### New `onboard_to_monday` tool
+
+- Returns monday's recommended first-run guide for a user who is new to monday.com, adapted from `onboard-to-monday` in `mondaycom/skills`: learn the user's work, preview the first board with `show-table-preview`, create and verify it, add a starter automation, then offer a dashboard.
+- The guide is static. The tool takes no input, calls no API, and changes nothing. The agent decides when to call it, from the tool description (the user is new or asks for help getting started).
+
 ## 5.78.11
 
 ### `get_automation_statistics` sends `board_id` as an ID on API version `2027-04`
