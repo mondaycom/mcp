@@ -1,5 +1,5 @@
 import { BoardObjectType, GetUserContextQuery } from '../../../../monday-graphql/generated/graphql.dev/graphql';
-import { ONBOARDING_SKILL_INSTRUCTIONS, ONBOARDING_SKILL_NAME } from './onboarding-skill';
+import { ONBOARDING_GUIDE, ONBOARDING_SKILL_NAME } from './onboarding-skill';
 
 /** A user whose monday.com user was created within this many days counts as new. */
 export const NEW_USER_MAX_AGE_DAYS = 14;
@@ -24,7 +24,7 @@ export interface OnboardingContext {
   signals: OnboardingSignals;
   skill: {
     name: string;
-    instructions: string;
+    guide: string;
   };
 }
 
@@ -64,7 +64,7 @@ export const getOnboardingContext = (
     },
     skill: {
       name: ONBOARDING_SKILL_NAME,
-      instructions: ONBOARDING_SKILL_INSTRUCTIONS,
+      guide: ONBOARDING_GUIDE,
     },
   };
 };

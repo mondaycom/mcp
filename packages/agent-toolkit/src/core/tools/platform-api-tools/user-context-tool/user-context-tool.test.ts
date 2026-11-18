@@ -3,7 +3,7 @@ import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '..
 import { UserContextTool } from './user-context-tool';
 import { GraphqlMondayObject, GetFavoriteDetailsQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { BoardObjectType, GetUserContextQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
-import { ONBOARDING_SKILL_INSTRUCTIONS, ONBOARDING_SKILL_NAME } from './onboarding-skill';
+import { ONBOARDING_GUIDE, ONBOARDING_SKILL_NAME } from './onboarding-skill';
 
 describe('UserContextTool', () => {
   let mocks: ReturnType<typeof createMockApiClient>;
@@ -270,7 +270,7 @@ describe('UserContextTool', () => {
           boardsCount: 1,
           accountCreatedAt: '2026-11-17T10:00:00Z',
         },
-        skill: { name: ONBOARDING_SKILL_NAME, instructions: ONBOARDING_SKILL_INSTRUCTIONS },
+        skill: { name: ONBOARDING_SKILL_NAME, guide: ONBOARDING_GUIDE },
       });
       expect(parsed.user).toEqual({ id: '123', name: 'New User', title: null });
       expect(parsed.account).not.toHaveProperty('created_at');
@@ -324,6 +324,64 @@ describe('UserContextTool', () => {
       const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
 
       expect(parsed).not.toHaveProperty('onboarding');
+    });
+  });
+
+  describe('partial GraphQL errors', () => {
+    const graphqlError = (data: unknown, paths: (string | number)[][]) =>
+      Object.assign(new Error('GraphQL error'), {
+        response: {
+          status: 200,
+          data,
+          errors: paths.map((path) => ({ message: "Linked item values can't be read", path })),
+        },
+      });
+
+    const partialData = {
+      ...mockUserContextResponse,
+      favorites: [],
+      intelligence: {
+        relevant_boards: [{ id: '100', board: { name: 'Top Board' } }],
+        relevant_docs: [
+          { id: '300', object_id: '3001', document: null },
+          { id: '301', object_id: '3011', document: { name: 'Meeting Notes' } },
+        ],
+        relevant_people: [],
+      },
+    };
+
+    it('uses the partial data when the only errors are under intelligence', async () => {
+      mocks
+        .getMockRequest()
+        .mockRejectedValueOnce(graphqlError(partialData, [['intelligence', 'relevant_docs', 0, 'document']]));
+
+      const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
+
+      expect(parsed.user).toEqual({ id: '123', name: 'John Doe', title: 'Product Manager' });
+      expect(parsed.relevantBoards).toEqual([{ id: '100', name: 'Top Board' }]);
+      expect(parsed.relevantDocs).toEqual([{ id: '301', name: 'Meeting Notes', objectId: '3011' }]);
+    });
+
+    it('still fails when an error is outside intelligence', async () => {
+      mocks
+        .getMockRequest()
+        .mockRejectedValueOnce(
+          graphqlError(partialData, [['intelligence', 'relevant_docs', 0, 'document'], ['boards']]),
+        );
+
+      const result = await callToolByNameRawAsync('get_user_context', {});
+
+      expect(result.content[0].text).toContain('Failed to execute tool get_user_context');
+    });
+
+    it('still fails when me is missing from the partial data', async () => {
+      mocks
+        .getMockRequest()
+        .mockRejectedValueOnce(graphqlError({ ...partialData, me: null }, [['intelligence', 'relevant_docs']]));
+
+      const result = await callToolByNameRawAsync('get_user_context', {});
+
+      expect(result.content[0].text).toContain('Failed to execute tool get_user_context');
     });
   });
 });

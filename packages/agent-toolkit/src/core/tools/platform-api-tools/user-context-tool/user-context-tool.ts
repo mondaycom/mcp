@@ -7,6 +7,7 @@ import { GetFavoriteDetailsQuery, GraphqlMondayObject } from '../../../../monday
 import { Favorite, RelevantBoard, RelevantDoc, RelevantPerson } from './user-context-tool.types';
 import { TYPE_TO_QUERY_VAR, TYPE_TO_RESPONSE_KEY } from './user-context-tool.consts';
 import { getOnboardingContext } from './user-context-onboarding';
+import { GraphQLErrorResponse } from '../../../../utils/graphql-error.types';
 
 export class UserContextTool extends BaseMondayApiTool<undefined> {
   name = 'get_user_context';
@@ -31,7 +32,7 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     - Get user's most relevant people based on interaction frequency and recency
     - Reduce the need for search requests by knowing user's commonly accessed items
 
-    If the user is likely new to monday.com, the response also includes an "onboarding" object with an onboarding skill. Follow its instructions to help the user get started.
+    If the user is likely new to monday.com, the response includes an "onboarding" object. In that case, offer to help the user get started, using onboarding.skill.guide (monday's recommended first-run flow).
     `;
   }
 
@@ -40,11 +41,7 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
   }
 
   protected async executeInternal(): Promise<ToolOutputType<never>> {
-    const { me, boards, favorites, intelligence } = await this.mondayApi.request<GetUserContextQuery>(
-      getUserContextQuery,
-      {},
-      { versionOverride: 'dev' },
-    );
+    const { me, boards, favorites, intelligence } = await this.fetchUserContext();
 
     if (!me) {
       return {
@@ -79,6 +76,27 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
       ...(onboarding && { onboarding }),
     };
     return { content: { message: 'User context', ...output } };
+  }
+
+  /**
+   * The intelligence lists are optional context. When the only GraphQL errors are under
+   * `intelligence` (e.g. a relevant doc whose name can't be read), use the partial data
+   * instead of failing the tool. The entries with errors come back null and are filtered out.
+   */
+  private async fetchUserContext(): Promise<GetUserContextQuery> {
+    try {
+      return await this.mondayApi.request<GetUserContextQuery>(getUserContextQuery, {}, { versionOverride: 'dev' });
+    } catch (error) {
+      const response = (error as GraphQLErrorResponse)?.response;
+      const data = response?.data as GetUserContextQuery | undefined;
+      const errors = response?.errors ?? [];
+      const onlyIntelligenceErrors = errors.length > 0 && errors.every((entry) => entry.path?.[0] === 'intelligence');
+
+      if (data?.me && onlyIntelligenceErrors) {
+        return data;
+      }
+      throw error;
+    }
   }
 
   private async fetchFavorites(favorites: NonNullable<GetUserContextQuery['favorites']>): Promise<Favorite[]> {
