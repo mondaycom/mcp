@@ -606,6 +606,26 @@ describe('ReadDocsTool', () => {
       );
     });
 
+    it('should not pass a limit to boards() so docs attached to an item are returned', async () => {
+      mocks.mockRequest
+        .mockResolvedValueOnce(mockDocsResponse)
+        .mockResolvedValueOnce(mockMarkdownResponse)
+        .mockResolvedValueOnce(mockCommentsResponse)
+        .mockResolvedValueOnce(mockBlockContentResponse);
+
+      await callToolByNameAsync(TOOL_NAME, {
+        type: 'ids',
+        ids: [DOC_ID],
+        include_comments: true,
+      });
+
+      const commentsCall = mocks
+        .getMockRequest()
+        .mock.calls.find(([query]: [string]) => query.includes('GetDocComments'));
+      expect(commentsCall?.[0]).toContain('boards(ids: [$boardId])');
+      expect(commentsCall?.[0]).not.toMatch(/boards\(ids: \[\$boardId\], limit/);
+    });
+
     it('should skip items with no updates', async () => {
       mocks.mockRequest
         .mockResolvedValueOnce(mockDocsResponse)
