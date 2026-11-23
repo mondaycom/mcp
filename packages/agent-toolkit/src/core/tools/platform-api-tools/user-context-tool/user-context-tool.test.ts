@@ -1,6 +1,7 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../test-utils/mock-api-client';
 import { UserContextTool } from './user-context-tool';
+import { getNotetakerStatusQuery } from './user-context-notetaker';
 import { GraphqlMondayObject, GetFavoriteDetailsQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { GetUserContextQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
 
@@ -251,6 +252,7 @@ describe('UserContextTool', () => {
       reason: null,
       calendar_connected: true,
       setup_url: null,
+      instructions: 'Ask the user which meetings Notetaker should join.',
       auto_join: { self_hosted: 'OFF', invited: 'OFF', locked: { self_hosted: false, invited: true } },
     };
 
@@ -270,37 +272,36 @@ describe('UserContextTool', () => {
     });
 
     it.each([
-      ['NO_ACCESS', false, 'BLOCKED', true, null],
-      ['NOT_CONNECTED', true, null, false, 'https://example.monday.com/product_view/notetaker'],
-      ['NOT_CONNECTED', true, null, null, 'https://example.monday.com/product_view/notetaker'],
-      ['AUTO_JOIN_OFF', true, null, true, null],
-      ['AUTO_JOIN_LOCKED_OFF', true, null, true, null],
+      ['NO_ACCESS', false, 'BLOCKED', true, 'Tell the user an account admin blocked Notetaker.'],
+      ['NOT_CONNECTED', true, null, false, 'Call show_connect_integration for googleCalendar and outlookCalendar.'],
+      ['NOT_CONNECTED', true, null, null, 'Ask the user whether they already connected a calendar.'],
+      ['AUTO_JOIN_OFF', true, null, true, 'Ask the user which meetings Notetaker should join.'],
+      ['AUTO_JOIN_LOCKED_OFF', true, null, true, 'Tell the user an account admin locked auto-join off.'],
       ['ACTIVE', true, null, true, null],
-      ['ACTIVE', false, 'NO_CREDITS', true, null],
+      ['ACTIVE', false, 'NO_CREDITS', true, 'Tell the user Notetaker is on hold until credits renew.'],
     ] as const)(
-      'passes through status %s (has_access %s, reason %s, calendar_connected %s)',
-      async (status, has_access, reason, calendar_connected, setup_url) => {
-        const settings = { ...notetakerSettings, status, has_access, reason, calendar_connected, setup_url };
+      'passes through status %s (has_access %s, reason %s, calendar_connected %s) with its instructions',
+      async (status, has_access, reason, calendar_connected, instructions) => {
+        const settings = { ...notetakerSettings, status, has_access, reason, calendar_connected, instructions };
         mocks.setResponseOnce(userOnlyResponse);
         mocks.setResponseOnce({ notetaker: { settings } });
 
         const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
 
         expect(parsed.notetaker).toEqual(settings);
+        expect(parsed.notetaker.instructions).toBe(instructions);
       },
     );
 
-    it('tells the agent how to act on each notetaker status', () => {
+    it('requests the instructions and keeps per-status guidance out of the description', () => {
       const description = new UserContextTool(mocks.mockApiClient as any).getDescription();
 
-      for (const status of ['NO_ACCESS', 'NOT_CONNECTED', 'AUTO_JOIN_OFF', 'AUTO_JOIN_LOCKED_OFF', 'ACTIVE']) {
-        expect(description).toContain(`${status}:`);
+      expect(getNotetakerStatusQuery).toContain('instructions');
+      expect(description).toContain('notetaker.instructions');
+      for (const status of ['NO_ACCESS', 'NOT_CONNECTED', 'AUTO_JOIN_OFF', 'AUTO_JOIN_LOCKED_OFF']) {
+        expect(description).not.toContain(status);
       }
-      expect(description).toContain('show_connect_integration');
-      expect(description).toContain('integrationName googleCalendar and outlookCalendar');
-      expect(description).toContain('Only if that tool does not exist, give notetaker.setup_url');
-      expect(description).toContain('calendar_connected is null');
-      expect(description).toContain('NO_CREDITS');
+      expect(description).not.toContain('show_connect_integration');
     });
 
     it('omits the notetaker block when settings are null (feature off for the account)', async () => {

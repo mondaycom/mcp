@@ -12,6 +12,7 @@ export const getNotetakerStatusQuery = gql`
         reason
         calendar_connected
         setup_url
+        instructions
         auto_join {
           self_hosted
           invited
@@ -42,6 +43,8 @@ export interface NotetakerStatus {
   reason: NotetakerNoAccessReason | null;
   calendar_connected: boolean | null;
   setup_url: string | null;
+  // What the agent should do next for this status, written by the Notetaker service; null when nothing is needed.
+  instructions: string | null;
   auto_join: {
     self_hosted: NotetakerAutoJoinMode;
     invited: NotetakerAutoJoinMode;
