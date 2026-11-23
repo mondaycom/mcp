@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.78.12
+
+### `read_docs` returns comments for docs attached to an item
+
+- `GetDocComments` no longer passes `limit: 1` to `boards()`. With that limit, the boards resolver skipped the hidden boards behind item-attached docs, so `read_docs` returned `comments: []` for them. The query still filters by a single board id.
+
 ## 5.78.11
 
 ### `get_automation_statistics` sends `board_id` as an ID on API version `2027-04`
