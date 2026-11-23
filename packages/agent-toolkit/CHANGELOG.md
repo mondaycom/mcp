@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.78.12
+
+### `get_automation_runs` sends `automation_ids` / `workflow_entity_ids` as IDs
+
+- The `automationIds` and `workflowEntityIds` filters are now sent as `automation_ids` and `workflow_entity_ids`, as arrays of strings. The camelCase API fields are `[Int]` and reject ids above 2^31-1 (signed 32-bit), and most workflow and automation ids are larger.
+- The tool input schema is unchanged.
+
 ## 5.78.11
 
 ### `get_automation_statistics` sends `board_id` as an ID on API version `2027-04`
