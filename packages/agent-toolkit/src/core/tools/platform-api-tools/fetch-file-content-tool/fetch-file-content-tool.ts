@@ -5,13 +5,6 @@ import { ToolInputType, ToolOutputType, ToolType } from '../../../tool';
 import { BaseMondayApiTool, createMondayApiAnnotations } from '../base-monday-api-tool';
 import { getItemAssets } from './fetch-file-content-tool.graphql';
 import { EXCEL_PARSE_DEADLINE_MS, ExcelExtractionResult, extractTextFromExcel } from './excel-text-extractor';
-import { extractTextFromExcelLegacy } from './legacy-excel-text-extractor';
-
-// When this flag is off, .xlsx files go through the old full-workbook loader.
-// Hosts that pass no flagChecker get the streaming reader.
-export const FETCH_FILE_CONTENT_XLSX_STREAMING_FLAG = 'mcp-fetch-file-content-xlsx-streaming';
-
-type ExcelExtractor = (buffer: Buffer) => Promise<ExcelExtractionResult>;
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_TEXT_LENGTH = 50_000;
@@ -44,7 +37,7 @@ export const fetchFileContentToolSchema = {
     .string()
     .optional()
     .describe(
-      'Optional file name hint used to determine the file type when the asset name is ambiguous. Include the extension (e.g. "report.pdf").',
+      'Name of the file to read, including the extension (e.g. "report.pdf"). Required when the column holds more than one file. With a single file, it is used to determine the file type when the file has no extension.',
     ),
   offset: z
     .number()
@@ -125,12 +118,7 @@ async function extractTextFromWord(buffer: Buffer): Promise<string> {
   return result.value;
 }
 
-async function processAsset(
-  asset: Asset,
-  offset: number,
-  extractExcel: ExcelExtractor,
-  fileNameHint?: string,
-): Promise<Record<string, unknown>> {
+async function processAsset(asset: Asset, offset: number, fileNameHint?: string): Promise<Record<string, unknown>> {
   const ext = resolveExtension(asset, fileNameHint);
   try {
     if (IMAGE_EXTENSIONS.has(ext)) {
@@ -164,7 +152,7 @@ async function processAsset(
       text = await extractTextFromWord(buffer);
       contentType = 'word';
     } else if (EXCEL_EXTENSIONS.has(ext)) {
-      ({ text, truncatedBy: excelTruncatedBy } = await extractExcel(buffer));
+      ({ text, truncatedBy: excelTruncatedBy } = await extractTextFromExcel(buffer));
       contentType = 'excel';
     } else if (TEXT_EXTENSIONS.has(ext)) {
       text = buffer.toString('utf-8');
@@ -227,6 +215,8 @@ Supported file types and what is returned:
 - Excel files (.xlsx, .xls): extracted text content per sheet
 - Images (.png, .jpg, .gif, .webp, .svg, .bmp, .ico): returns the public URL so you can view or analyze the image directly
 
+Each call reads one file. When the column holds several files, pass file_name to choose one. A call without it returns only the list of file names.
+
 Text responses include a total_length field. If has_more is true, the content was truncated — you can call this tool again with next_offset if you need the remaining content. For very large Excel workbooks, extraction_truncated: true means the text was cut short and the rest of the workbook is not available.
 
 When to use:
@@ -262,13 +252,23 @@ When NOT to use:
       };
     }
 
-    const extractExcel = this.isXlsxStreamingEnabled() ? extractTextFromExcel : extractTextFromExcelLegacy;
-    const files = await Promise.all(assets.map((asset) => processAsset(asset, offset, extractExcel, file_name)));
+    if (assets.length === 1) {
+      return { content: { files: [await processAsset(assets[0], offset, file_name)] } };
+    }
 
-    return { content: { files } };
-  }
+    const wanted = file_name?.trim().toLowerCase();
+    const asset = wanted && assets.find((a) => a.name.trim().toLowerCase() === wanted);
+    if (!asset) {
+      return {
+        content: {
+          message: file_name
+            ? `No file named "${file_name}" in this column. Call again with file_name set to one of the ${assets.length} files listed.`
+            : `This column holds ${assets.length} files. Call again with file_name set to the one to read.`,
+          files: assets.map((a) => ({ file_name: a.name, file_extension: resolveExtension(a) })),
+        },
+      };
+    }
 
-  private isXlsxStreamingEnabled(): boolean {
-    return this.context?.deps?.flagChecker?.(FETCH_FILE_CONTENT_XLSX_STREAMING_FLAG) ?? true;
+    return { content: { files: [await processAsset(asset, offset, file_name)] } };
   }
 }
