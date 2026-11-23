@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.78.12
+
+### `create_doc` / `update_doc` schema and description fixes (Docs MCP review findings)
+
+- `create_doc`: `docOwnerIds` is limited to 50 ids. Its description no longer says it bypasses permission checks or mentions `add_subscribers_to_object`, and it states that owners apply to workspace docs only and are ignored for `location="item"`. The item-docs line in the tool description no longer lists `docOwnerIds`.
+- `update_doc`: image `public_url` and video `raw_url` must be `https://` URLs; `http`, `file` and `ftp` are rejected at validation. The `column_id` description points to `get_board_info` instead of the hidden `get_board_schema`.
+
 ## 5.78.11
 
 ### `get_automation_statistics` sends `board_id` as an ID on API version `2027-04`

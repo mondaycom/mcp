@@ -257,6 +257,20 @@ describe('CreateDocTool', () => {
         expect(result.content[0].text).toContain('Invalid arguments');
         expect(mocks.getMockRequest()).not.toHaveBeenCalled();
       });
+
+      it('rejects more than 50 docOwnerIds', async () => {
+        const args = {
+          location: 'workspace',
+          workspace_id: 12345,
+          doc_name: 'Too Many Owners Doc',
+          markdown: '# Test',
+          docOwnerIds: Array.from({ length: 51 }, (_, i) => String(i + 1)),
+        };
+
+        const result = await callToolByNameRawAsync('create_doc', args);
+        expect(result.content[0].text).toContain('Invalid arguments');
+        expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+      });
     });
 
     describe('Validation Errors', () => {

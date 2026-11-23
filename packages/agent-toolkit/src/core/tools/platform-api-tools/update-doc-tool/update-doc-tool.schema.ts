@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+const HttpsUrlSchema = z.string().url().regex(/^https:\/\//, 'URL must start with https://');
+
 // ─── Delta format ─────────────────────────────────────────────────────────────
 
 const AttributesSchema = z
@@ -28,7 +30,7 @@ const ColumnValueInsertSchema = z.object({
   column_value: z
     .object({
       item_id: z.union([z.string(), z.number()]).describe('The board item ID.'),
-      column_id: z.string().describe('The column ID (e.g. "status", "date4"). Get column IDs from get_board_schema.'),
+      column_id: z.string().describe('The column ID (e.g. "status", "date4"). Get column IDs from get_board_info.'),
     })
     .describe('Column value blot — embeds a live board column value inline in the doc.'),
 });
@@ -133,11 +135,9 @@ export const CreateBlockPageBreakSchema = z.object({ block_type: z.literal('page
 
 export const CreateBlockImageSchema = z.object({
   block_type: z.literal('image'),
-  public_url: z
-    .string()
-    .url()
-    .optional()
-    .describe('Publicly accessible image URL. Provide either public_url or asset_id.'),
+  public_url: HttpsUrlSchema.optional().describe(
+    'Publicly accessible https:// image URL. Provide either public_url or asset_id.',
+  ),
   asset_id: z
     .union([z.number().int(), z.string().regex(/^\d+$/).transform(Number)])
     .optional()
@@ -149,7 +149,7 @@ export const CreateBlockImageSchema = z.object({
 
 export const CreateBlockVideoSchema = z.object({
   block_type: z.literal('video'),
-  raw_url: z.string().url().describe('Video URL (YouTube, Vimeo, or direct video URL).'),
+  raw_url: HttpsUrlSchema.describe('https:// video URL (YouTube, Vimeo, or direct video URL).'),
   width: z.number().int().min(1).optional().describe('Width in pixels.'),
 });
 

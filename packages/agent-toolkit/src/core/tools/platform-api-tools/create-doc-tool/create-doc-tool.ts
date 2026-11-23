@@ -38,6 +38,8 @@ import {
   rethrowWithContext,
 } from '../../../../utils';
 
+const MAX_DOC_OWNER_IDS = 50;
+
 const DocType = z.enum(['workspace', 'item']);
 
 type ItemDoc = {
@@ -76,9 +78,10 @@ export const createDocToolSchema = {
   docOwnerIds: z
     .array(z.string())
     .min(1)
+    .max(MAX_DOC_OWNER_IDS)
     .optional()
     .describe(
-      'Optional list of user IDs to set as document owners at creation time. Use this to add the agent owner so they retain access to the document. Ownership is set inside the creation mutation itself, bypassing the permission checks that would block a subsequent add_subscribers_to_object call.',
+      `Optional list of up to ${MAX_DOC_OWNER_IDS} user IDs to add as owners of a workspace document when it is created. Use this to add the agent owner so they keep access to the document. The usual membership rules still apply: only users from the same account are added, and guests and view-only users are never made owners. Ignored when location="item", because item docs follow the permissions of their board.`,
     ),
   workspace_id: z
     .number()
@@ -124,7 +127,7 @@ export class CreateDocTool extends BaseMondayApiTool<typeof createDocToolSchema>
 
 LOCATION TYPES:
 - workspace: Creates a document in a workspace (requires workspace_id, optional doc_kind, optional folder_id, optional docOwnerIds)
-- item: Creates a document attached to an item (requires item_id, optional column_id, optional docOwnerIds)
+- item: Creates a document attached to an item (requires item_id, optional column_id)
 
 USAGE EXAMPLES:
 - Workspace doc: { location: "workspace", workspace_id: 123, doc_name: "My Doc", doc_kind: "private" , markdown: "..." }

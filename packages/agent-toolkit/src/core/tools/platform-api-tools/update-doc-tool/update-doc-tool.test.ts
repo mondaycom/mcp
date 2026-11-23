@@ -869,6 +869,23 @@ describe('UpdateDocTool', () => {
     expect(result.content[0].text).not.toContain('original block is gone');
   });
 
+  // ─── https-only URLs ─────────────────────────────────────────────────────
+
+  it.each([
+    ['image', { block_type: 'image', public_url: 'http://example.com/img.png' }],
+    ['image', { block_type: 'image', public_url: 'file:///etc/passwd' }],
+    ['video', { block_type: 'video', raw_url: 'http://youtube.com/watch?v=abc' }],
+    ['video', { block_type: 'video', raw_url: 'ftp://example.com/video.mp4' }],
+  ])('rejects a non-https %s URL', async (_type, block) => {
+    const result = await callToolByNameRawAsync('update_doc', {
+      doc_id: 'doc_123',
+      operations: [{ operation_type: 'create_block', block }],
+    });
+
+    expect(result.content[0].text).toContain('Invalid arguments');
+    expect(mocks.getMockRequest()).not.toHaveBeenCalled();
+  });
+
   // ─── create_block with asset_id ──────────────────────────────────────────
 
   it('fails when image block has neither public_url nor asset_id', async () => {
