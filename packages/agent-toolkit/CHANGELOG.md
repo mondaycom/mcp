@@ -4,7 +4,7 @@
 
 ### `get_user_context` includes the user's Notetaker setup
 
-- Adds an optional `notetaker` block: `status`, `has_access`, `calendar_connected` and `auto_join` (with admin locks), from `notetaker { settings }` at API version `2027-01`.
+- Adds an optional `notetaker` block: `status`, `has_access`, `reason` (why the user has no access), `calendar_connected`, `setup_url` (link to set up Notetaker when no calendar is connected) and `auto_join` (with admin locks), from `notetaker { settings }` at API version `2027-01`.
 - Fetched in a separate call with a 1.5s timeout, in parallel with favorites. On a timeout, an error, or `null` (feature off for the account), the block is left out and the rest of the context is unchanged.
 - This takes effect once `notetaker.settings` is deployed (DaPulse/monday-meetings#740).
 
@@ -386,7 +386,7 @@ DOCUMENTS search now returns `highlights`: an array of `{ field, fragments }` en
 
 ### create_notification — report failures instead of swallowing them
 
-`create_notification` caught every error and returned the plain string `Failed to send notification to user <id>` as its result. Because the MCP layer only marks a call as an error when the tool _throws_, that string was delivered as a **success** — callers could not distinguish a delivered notification from a failed one, and the underlying cause was discarded entirely.
+`create_notification` caught every error and returned the plain string `Failed to send notification to user <id>` as its result. Because the MCP layer only marks a call as an error when the tool *throws*, that string was delivered as a **success** — callers could not distinguish a delivered notification from a failed one, and the underlying cause was discarded entirely.
 
 - Errors now go through `rethrowWithContext(error, 'send notification to user <id>')`, the same path already used by `create_update` and `delete_update`. GraphQL failures surface their real messages plus `extensions.code` / `error_data`, and reach the client as `isError: true` with JSON `structuredContent`: `{ message, tool, status, errors: [{ code, message, path }] }`
 - Added an empty-response guard — the API can return `create_notification: null` with no GraphQL error, which previously reported success. It now throws a `ToolValidationError` coded `EMPTY_API_RESPONSE` naming the likely cause: a `target_id` / `target_type` mismatch (`Post` expects an update/reply id, `Project` expects an item/board id)
