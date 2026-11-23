@@ -30,15 +30,21 @@ export const NOTETAKER_STATUS_API_VERSION = '2027-01';
 // The block is optional context: a slow Notetaker must not hold up the rest of get_user_context.
 export const NOTETAKER_STATUS_TIMEOUT_MS = 1500;
 
+export type NotetakerSetupStatus = 'NO_ACCESS' | 'NOT_CONNECTED' | 'AUTO_JOIN_OFF' | 'AUTO_JOIN_LOCKED_OFF' | 'ACTIVE';
+
+export type NotetakerNoAccessReason = 'NOT_ALLOWED_PER_SCOPE' | 'BLOCKED' | 'AI_DISABLED' | 'NO_CREDITS';
+
+export type NotetakerAutoJoinMode = 'OFF' | 'INTERNAL' | 'EXTERNAL' | 'ALL';
+
 export interface NotetakerStatus {
-  status: string;
+  status: NotetakerSetupStatus;
   has_access: boolean;
-  reason: string | null;
+  reason: NotetakerNoAccessReason | null;
   calendar_connected: boolean | null;
   setup_url: string | null;
   auto_join: {
-    self_hosted: string;
-    invited: string;
+    self_hosted: NotetakerAutoJoinMode;
+    invited: NotetakerAutoJoinMode;
     locked: { self_hosted: boolean; invited: boolean };
   };
 }

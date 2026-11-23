@@ -269,6 +269,40 @@ describe('UserContextTool', () => {
       );
     });
 
+    it.each([
+      ['NO_ACCESS', false, 'BLOCKED', true, null],
+      ['NOT_CONNECTED', true, null, false, 'https://example.monday.com/product_view/notetaker'],
+      ['NOT_CONNECTED', true, null, null, 'https://example.monday.com/product_view/notetaker'],
+      ['AUTO_JOIN_OFF', true, null, true, null],
+      ['AUTO_JOIN_LOCKED_OFF', true, null, true, null],
+      ['ACTIVE', true, null, true, null],
+      ['ACTIVE', false, 'NO_CREDITS', true, null],
+    ] as const)(
+      'passes through status %s (has_access %s, reason %s, calendar_connected %s)',
+      async (status, has_access, reason, calendar_connected, setup_url) => {
+        const settings = { ...notetakerSettings, status, has_access, reason, calendar_connected, setup_url };
+        mocks.setResponseOnce(userOnlyResponse);
+        mocks.setResponseOnce({ notetaker: { settings } });
+
+        const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
+
+        expect(parsed.notetaker).toEqual(settings);
+      },
+    );
+
+    it('tells the agent how to act on each notetaker status', () => {
+      const description = new UserContextTool(mocks.mockApiClient as any).getDescription();
+
+      for (const status of ['NO_ACCESS', 'NOT_CONNECTED', 'AUTO_JOIN_OFF', 'AUTO_JOIN_LOCKED_OFF', 'ACTIVE']) {
+        expect(description).toContain(`${status}:`);
+      }
+      expect(description).toContain('show_connect_integration');
+      expect(description).toContain('integrationName googleCalendar and outlookCalendar');
+      expect(description).toContain('Only if that tool does not exist, give notetaker.setup_url');
+      expect(description).toContain('calendar_connected is null');
+      expect(description).toContain('NO_CREDITS');
+    });
+
     it('omits the notetaker block when settings are null (feature off for the account)', async () => {
       mocks.setResponseOnce(userOnlyResponse);
       mocks.setResponseOnce({ notetaker: { settings: null } });

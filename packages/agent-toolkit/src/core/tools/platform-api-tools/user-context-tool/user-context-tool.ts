@@ -35,7 +35,12 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     - Get user's most relevant boards based on visit frequency and recency
     - Get user's most relevant docs based on load frequency and recency
     - Get user's most relevant people based on interaction frequency and recency
-    - Get the user's Notetaker setup (notetaker.status, access, calendar connection, auto-join settings) when available, to decide whether Notetaker still needs setting up
+    - Get the user's Notetaker setup (notetaker.status, reason, has_access, calendar_connected, setup_url, auto_join) when available, to decide whether Notetaker still needs setting up. Act on notetaker.status:
+      - NO_ACCESS: tell the user why, from notetaker.reason (NOT_ALLOWED_PER_SCOPE, BLOCKED or AI_DISABLED) and who can fix it; do not retry or change settings.
+      - NOT_CONNECTED: if calendar_connected is null the check failed, so ask the user whether they connected a calendar instead of telling them to connect one. Otherwise call the show_connect_integration tool (load it first if needed) twice in the same reply, with integrationName googleCalendar and outlookCalendar, and call get_user_context again once they connect. Only if that tool does not exist, give notetaker.setup_url or tell them to open Notetaker in monday.
+      - AUTO_JOIN_OFF: unless the user already said which meetings, ask them, then confirm before changing auto_join with the update_notetaker_auto_join_settings mutation (read its description for the options).
+      - AUTO_JOIN_LOCKED_OFF: tell the user an account admin turned auto-join off and locked it; do not change it.
+      - ACTIVE: nothing to set up. When notetaker.reason is NO_CREDITS, tell the user Notetaker is on hold until credits renew or an admin adds more.
     - Reduce the need for search requests by knowing user's commonly accessed items
     `;
   }
