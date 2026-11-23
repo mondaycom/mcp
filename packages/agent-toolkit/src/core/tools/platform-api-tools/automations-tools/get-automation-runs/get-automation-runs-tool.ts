@@ -110,8 +110,12 @@ export class GetAutomationRunsTool extends BaseMondayApiTool<typeof getAutomatio
     input: ToolInputType<typeof getAutomationRunsToolSchema>,
   ): Promise<ToolOutputType<never>> {
     const offset = input.nextPageOffset ?? 0;
+    // The camelCase id filters are [Int] and reject ids above 2^31-1; the snake_case ones are [ID!].
+    const { automationIds, workflowEntityIds, ...otherFilters } = input.filters ?? {};
     const filters = {
-      ...(input.filters ?? {}),
+      ...otherFilters,
+      ...(automationIds ? { automation_ids: automationIds.map(String) } : {}),
+      ...(workflowEntityIds ? { workflow_entity_ids: workflowEntityIds.map(String) } : {}),
       ...(input.boardId ? { boardId: input.boardId } : {}),
     };
 
