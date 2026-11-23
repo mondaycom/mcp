@@ -9,6 +9,13 @@ describe('column-filter-aggregation-guidelines', () => {
     expect(getFilterGuidelineForColumnType('people')).toContain('assigned_to_me');
   });
 
+  it('name guidelines document any_of for several exact names', () => {
+    const guideline = getFilterGuidelineForColumnType('name')!;
+    expect(guideline).toMatch(/Supported operators: any_of, not_any_of, contains_text, not_contains_text, starts_with\./);
+    expect(guideline).toContain('"compareValue": ["Q3 Launch", "Q4 Launch"], "operator": "any_of"');
+    expect(guideline).not.toContain('ends_with');
+  });
+
   it('returns undefined for types without documented filter rules', () => {
     expect(getFilterGuidelineForColumnType('unsupported_type_xyz')).toBeUndefined();
   });
