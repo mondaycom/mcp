@@ -81,7 +81,25 @@ describe('GetAutomationRunsTool', () => {
 
       expect(mocks.getMockRequest()).toHaveBeenCalledWith(
         expect.stringContaining('trigger_events'),
-        { nextPageOffset: 0, filters: { stateFilter: ['failure'], automationIds: [1, 2] } },
+        { nextPageOffset: 0, filters: { stateFilter: ['failure'], automation_ids: ['1', '2'] } },
+      );
+    });
+
+    it('sends ids above 32-bit as strings under the ID filter names', async () => {
+      mocks.setResponseOnce({ trigger_events: { triggerEvents: [] } });
+
+      await callToolByNameRawAsync('get_automation_runs', {
+        mode: 'history',
+        accountWide: true,
+        filters: { workflowEntityIds: [3000000001], automationIds: [12000000002] },
+      });
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledWith(
+        expect.stringContaining('trigger_events'),
+        {
+          nextPageOffset: 0,
+          filters: { workflow_entity_ids: ['3000000001'], automation_ids: ['12000000002'] },
+        },
       );
     });
 
