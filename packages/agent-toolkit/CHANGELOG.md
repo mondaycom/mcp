@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.79.0
+
+### `fetch_file_content` reads one file per call
+
+- When a files column holds several files, `file_name` now picks the file to read (exact name, case-insensitive). A call without `file_name`, or with a name that matches no file, downloads nothing and returns `message` plus `files` with each file's `file_name` and `file_extension`. A column with one file works as before, and `file_name` is still used there only to determine the file type.
+- Before, every call downloaded and extracted every file in the column at once, and paging with `offset` repeated that for the whole column on each page. On a column with dozens of .xlsx files, one call used 25-60 seconds of CPU and over 2 GB of memory.
+- `.xlsx` files are always read with the streaming reader. The `mcp-fetch-file-content-xlsx-streaming` flag and the full-workbook loader are removed.
+
 ## 5.78.14
 
 ### `create_doc` / `update_doc` schema and description fixes (Docs MCP review findings)
