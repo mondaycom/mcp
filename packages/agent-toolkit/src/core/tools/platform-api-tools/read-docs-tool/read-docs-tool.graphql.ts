@@ -67,9 +67,12 @@ export const getDocVersionHistory = gql`
   }
 `;
 
+// No `limit` on boards(): with ids plus limit <= 1 the resolver takes the exposed_to_user/high_level_objects
+// path, which drops docs attached to an item (doc column / item docs) and returns boards: [], so their
+// comments came back empty. One id without a limit is authorized per board and returns those docs too.
 export const getDocComments = gql`
   query GetDocComments($boardId: ID!, $itemsLimit: Int, $updatesLimit: Int) {
-    boards(ids: [$boardId], limit: 1) {
+    boards(ids: [$boardId]) {
       items_page(limit: $itemsLimit) {
         items {
           id

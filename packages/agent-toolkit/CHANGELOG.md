@@ -7,6 +7,12 @@
 - `create_doc`: `docOwnerIds` is limited to 50 ids. Its description no longer says it bypasses permission checks or mentions `add_subscribers_to_object`, and it states that owners apply to workspace docs only and are ignored for `location="item"`. The item-docs line in the tool description no longer lists `docOwnerIds`.
 - `update_doc`: image `public_url` and video `raw_url` must be `https://` URLs; `http`, `file` and `ftp` are rejected at validation. The `column_id` description points to `get_board_info` instead of the hidden `get_board_schema`.
 
+## 5.78.13
+
+### `read_docs` returns comments for docs attached to an item
+
+- `GetDocComments` no longer passes `limit: 1` to `boards()`. With that limit, the boards resolver skipped the hidden boards behind item-attached docs, so `read_docs` returned `comments: []` for them. The query still filters by a single board id.
+
 ## 5.78.12
 
 ### `get_automation_runs` sends `automation_ids` / `workflow_entity_ids` as IDs
