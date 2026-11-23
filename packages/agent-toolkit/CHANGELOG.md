@@ -1,11 +1,18 @@
 # Changelog
 
-## 5.78.12
+## 5.78.14
 
 ### `create_doc` / `update_doc` schema and description fixes (Docs MCP review findings)
 
 - `create_doc`: `docOwnerIds` is limited to 50 ids. Its description no longer says it bypasses permission checks or mentions `add_subscribers_to_object`, and it states that owners apply to workspace docs only and are ignored for `location="item"`. The item-docs line in the tool description no longer lists `docOwnerIds`.
 - `update_doc`: image `public_url` and video `raw_url` must be `https://` URLs; `http`, `file` and `ftp` are rejected at validation. The `column_id` description points to `get_board_info` instead of the hidden `get_board_schema`.
+
+## 5.78.12
+
+### `get_automation_runs` sends `automation_ids` / `workflow_entity_ids` as IDs
+
+- The `automationIds` and `workflowEntityIds` filters are now sent as `automation_ids` and `workflow_entity_ids`, as arrays of strings. The camelCase API fields are `[Int]` and reject ids above 2^31-1 (signed 32-bit), and most workflow and automation ids are larger.
+- The tool input schema is unchanged.
 
 ## 5.78.11
 
