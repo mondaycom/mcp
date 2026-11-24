@@ -87,6 +87,13 @@ claude plugin marketplace add /path/to/mcp
 claude plugin install monday-crm@monday-mcp
 ```
 
+### From Neotask Construct
+
+```bash
+# Install the plugin
+neotask construct install monday-crm
+```
+
 ## Getting started
 
 The plugin installs disabled. Enable it with
