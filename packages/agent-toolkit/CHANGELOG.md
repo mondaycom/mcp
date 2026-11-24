@@ -1,6 +1,6 @@
 # Changelog
 
-## 5.79.0
+## 5.80.0
 
 ### `get_user_context` includes the user's Notetaker setup
 
@@ -8,6 +8,14 @@
 - Fetched in a separate call with a 1.5s timeout, in parallel with favorites. On a timeout, an error, or `null` (feature off for the account), the block is left out and the rest of the context is unchanged.
 - The block includes `instructions`: what the agent should do next for the user's current status (for example, connecting a calendar with `show_connect_integration`, or asking which meetings to auto-join). The Notetaker service writes it, so the wording changes without a toolkit release. It is `null` when nothing needs doing. The tool description only points agents to it.
 - This takes effect once `notetaker.settings` is deployed (DaPulse/monday-meetings#740).
+
+## 5.79.0
+
+### `fetch_file_content` reads one file per call
+
+- When a files column holds several files, `file_name` now picks the file to read (exact name, case-insensitive). A call without `file_name`, or with a name that matches no file, downloads nothing and returns `message` plus `files` with each file's `file_name` and `file_extension`. A column with one file works as before, and `file_name` is still used there only to determine the file type.
+- Before, every call downloaded and extracted every file in the column at once, and paging with `offset` repeated that for the whole column on each page. On a column with dozens of .xlsx files, one call used 25-60 seconds of CPU and over 2 GB of memory.
+- `.xlsx` files are always read with the streaming reader. The `mcp-fetch-file-content-xlsx-streaming` flag and the full-workbook loader are removed.
 
 ## 5.78.14
 
