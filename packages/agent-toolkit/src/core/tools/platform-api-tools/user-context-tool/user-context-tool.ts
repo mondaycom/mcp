@@ -35,7 +35,7 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
     - Get user's most relevant boards based on visit frequency and recency
     - Get user's most relevant docs based on load frequency and recency
     - Get user's most relevant people based on interaction frequency and recency
-    - Get the user's Notetaker setup status (notetaker.status); when setup is needed, notetaker.instructions says what to do next, so follow it
+    - Get the user's Notetaker setup status (notetaker.status). When setup is needed, follow notetaker.instructions, which says what to do next
     - Reduce the need for search requests by knowing user's commonly accessed items
     `;
   }
