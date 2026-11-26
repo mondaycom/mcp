@@ -134,10 +134,13 @@ EXAMPLES:
   ❌ Wrong: {"columnId": "numbers", "compareValue": 100, "operator": "any_of"} // not using array with any_of operator
   ❌ Wrong: {"columnId": "numbers", "compareValue": ["50"], "operator": "greater_than"} // using array with single value operator`,
 
-  name: `Supported operators: "contains_text", "not_contains_text". CompareValue can be full or partial text
+  name: `Supported operators: any_of, not_any_of, contains_text, not_contains_text, starts_with. With any_of and not_any_of, compareValue is an array of whole item names, matched ignoring case, so one rule can match several exact names; part of a name matches nothing. With contains_text, not_contains_text and starts_with, compareValue is a single string of full or partial text.
 EXAMPLES:
+  ✅ Correct: {"columnId": "name", "compareValue": ["Q3 Launch", "Q4 Launch"], "operator": "any_of"} // items named exactly one of these
   ✅ Correct: {"columnId": "name", "compareValue": "marketing campaign", "operator": "contains_text"} // using string with contains_text
-  ✅ Correct: {"columnId": "name", "compareValue": "marketing campaign", "operator": "not_contains_text"} // using string with not_contains_text`,
+  ✅ Correct: {"columnId": "name", "compareValue": "marketing campaign", "operator": "not_contains_text"} // using string with not_contains_text
+  ✅ Correct: {"columnId": "name", "compareValue": "Q3", "operator": "starts_with"} // names starting with Q3
+  ❌ Wrong: {"columnId": "name", "compareValue": ["Q3"], "operator": "any_of"} // any_of matches whole names; use contains_text for part of a name`,
 
   status: `Supported operators: any_of, not_any_of, contains_terms. CompareValue should be either:
   - id of label from column settings - when used with any_of, not_any_of operators
