@@ -86,20 +86,32 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
   /**
    * relevant_people and relevant_docs can point at users or docs the API no longer resolves (deleted, moved). GraphQL then
    * returns the full data with NOT_FOUND errors under intelligence, and the client throws. Those entries are optional
-   * enrichment, so keep the partial data when every error is under intelligence; rethrow anything else.
+   * enrichment, so keep the partial data when every error is a NOT_FOUND under intelligence. Anything else (a timeout,
+   * a permission error, an error outside intelligence) still fails the tool.
    */
   private async fetchUserContext(): Promise<GetUserContextQuery> {
     try {
       return await this.mondayApi.request<GetUserContextQuery>(getUserContextQuery, {}, { versionOverride: 'dev' });
     } catch (error) {
-      const response = (error as { response?: { data?: GetUserContextQuery; errors?: { path?: unknown[] }[] } })
-        ?.response;
+      const response = (
+        error as {
+          response?: {
+            data?: GetUserContextQuery;
+            errors?: { path?: unknown[]; extensions?: { code?: unknown } }[];
+          };
+        }
+      )?.response;
       const errors = response?.errors ?? [];
-      const onlyIntelligenceErrors = errors.length > 0 && errors.every((e) => e.path?.[0] === 'intelligence');
-      if (response?.data?.me && onlyIntelligenceErrors) {
-        return response.data;
+      const onlyUnresolvedIntelligence =
+        errors.length > 0 && errors.every((e) => e.path?.[0] === 'intelligence' && e.extensions?.code === 'NOT_FOUND');
+      if (!response?.data?.me || !onlyUnresolvedIntelligence) {
+        throw error;
       }
-      throw error;
+      this.context?.deps?.logger?.warn(
+        { errorCount: errors.length, paths: errors.map((e) => e.path?.slice(0, 2).join('.')) },
+        'get_user_context: using partial data, dropped unresolved intelligence entries',
+      );
+      return response.data;
     }
   }
 
