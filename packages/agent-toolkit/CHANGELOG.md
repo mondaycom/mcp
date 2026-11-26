@@ -1,5 +1,12 @@
 # Changelog
 
+## 5.80.1
+
+### `get_user_context` no longer fails on unresolved relevant people or docs
+
+- When `intelligence.relevant_people` or `relevant_docs` points at a user or doc the API can't resolve (deleted or moved), the API returns the data with `NOT_FOUND` errors under `intelligence`. The tool used to fail as a whole. It now keeps that partial data and leaves those entries out, so the user, account, favorites and `notetaker` blocks still come back.
+- Errors outside `intelligence`, or a response with no `me`, still fail the tool as before.
+
 ## 5.80.0
 
 ### `get_user_context` includes the user's Notetaker setup

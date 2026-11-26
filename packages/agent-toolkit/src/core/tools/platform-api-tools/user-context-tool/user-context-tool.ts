@@ -45,11 +45,7 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
   }
 
   protected async executeInternal(): Promise<ToolOutputType<never>> {
-    const { me, favorites, intelligence } = await this.mondayApi.request<GetUserContextQuery>(
-      getUserContextQuery,
-      {},
-      { versionOverride: 'dev' },
-    );
+    const { me, favorites, intelligence } = await this.fetchUserContext();
 
     if (!me) {
       return {
@@ -85,6 +81,26 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
       ...(notetaker && { notetaker }),
     };
     return { content: { message: 'User context', ...output } };
+  }
+
+  /**
+   * relevant_people and relevant_docs can point at users or docs the API no longer resolves (deleted, moved). GraphQL then
+   * returns the full data with NOT_FOUND errors under intelligence, and the client throws. Those entries are optional
+   * enrichment, so keep the partial data when every error is under intelligence; rethrow anything else.
+   */
+  private async fetchUserContext(): Promise<GetUserContextQuery> {
+    try {
+      return await this.mondayApi.request<GetUserContextQuery>(getUserContextQuery, {}, { versionOverride: 'dev' });
+    } catch (error) {
+      const response = (error as { response?: { data?: GetUserContextQuery; errors?: { path?: unknown[] }[] } })
+        ?.response;
+      const errors = response?.errors ?? [];
+      const onlyIntelligenceErrors = errors.length > 0 && errors.every((e) => e.path?.[0] === 'intelligence');
+      if (response?.data?.me && onlyIntelligenceErrors) {
+        return response.data;
+      }
+      throw error;
+    }
   }
 
   private async fetchFavorites(favorites: NonNullable<GetUserContextQuery['favorites']>): Promise<Favorite[]> {

@@ -234,6 +234,68 @@ describe('UserContextTool', () => {
     expect(result.content[0].text).toBe('Failed to execute tool get_user_context: Unauthorized');
   });
 
+  describe('partial intelligence errors', () => {
+    const clientError = (data: unknown, errors: { message: string; path: unknown[] }[]) =>
+      Object.assign(new Error(errors[0].message), { response: { data, errors } });
+
+    const partialData: GetUserContextQuery = {
+      ...mockUserContextResponse,
+      favorites: [],
+      intelligence: {
+        ...mockUserContextResponse.intelligence,
+        relevant_people: [
+          { id: '200', user: { name: 'Alice Smith' } },
+          { id: '201', user: null },
+        ],
+      },
+    };
+
+    it('keeps the context and drops unresolved people when only intelligence fields fail', async () => {
+      mocks
+        .getMockRequest()
+        .mockRejectedValueOnce(
+          clientError(partialData, [
+            { message: 'User not found', path: ['intelligence', 'relevant_people', 1, 'user'] },
+          ]),
+        );
+      mocks.setResponseOnce({ notetaker: { settings: null } });
+
+      const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
+
+      expect(parsed.message).toBe('User context');
+      expect(parsed.user).toEqual({ id: '123', name: 'John Doe', title: 'Product Manager' });
+      expect(parsed.relevantPeople).toEqual([{ id: '200', name: 'Alice Smith' }]);
+      expect(parsed.relevantDocs).toHaveLength(2);
+    });
+
+    it('still fails when an error is outside intelligence', async () => {
+      mocks.getMockRequest().mockRejectedValueOnce(
+        clientError(partialData, [
+          { message: 'User not found', path: ['intelligence', 'relevant_people', 1, 'user'] },
+          { message: 'Internal error', path: ['favorites'] },
+        ]),
+      );
+
+      const result = await callToolByNameRawAsync('get_user_context', {});
+
+      expect(result.content[0].text).toBe('Failed to execute tool get_user_context: User not found');
+    });
+
+    it('still fails when there is no user in the partial data', async () => {
+      mocks
+        .getMockRequest()
+        .mockRejectedValueOnce(
+          clientError({ ...partialData, me: null }, [
+            { message: 'User not found', path: ['intelligence', 'relevant_people', 1, 'user'] },
+          ]),
+        );
+
+      const result = await callToolByNameRawAsync('get_user_context', {});
+
+      expect(result.content[0].text).toBe('Failed to execute tool get_user_context: User not found');
+    });
+  });
+
   describe('notetaker block', () => {
     const userOnlyResponse: GetUserContextQuery = {
       me: {
