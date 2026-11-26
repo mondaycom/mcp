@@ -234,6 +234,131 @@ describe('UserContextTool', () => {
     expect(result.content[0].text).toBe('Failed to execute tool get_user_context: Unauthorized');
   });
 
+  describe('partial intelligence errors', () => {
+    type GqlError = { message: string; path: unknown[]; extensions?: { code: string } };
+    const clientError = (data: unknown, errors: GqlError[]) =>
+      Object.assign(new Error(errors[0].message), { response: { data, errors } });
+    const notFound = (index: number): GqlError => ({
+      message: 'User not found',
+      path: ['intelligence', 'relevant_people', index, 'user'],
+      extensions: { code: 'NOT_FOUND' },
+    });
+    const docNotFound = (index: number): GqlError => ({
+      message: 'Document not found',
+      path: ['intelligence', 'relevant_docs', index, 'document'],
+      extensions: { code: 'NOT_FOUND' },
+    });
+
+    const partialData: GetUserContextQuery = {
+      ...mockUserContextResponse,
+      favorites: [],
+      intelligence: {
+        ...mockUserContextResponse.intelligence,
+        relevant_people: [
+          { id: '200', user: { name: 'Alice Smith' } },
+          { id: '201', user: null },
+        ],
+      },
+    };
+
+    it('keeps the context, drops unresolved people and logs when every error is a NOT_FOUND under intelligence', async () => {
+      const warn = jest.fn();
+      mocks.getMockRequest().mockRejectedValueOnce(clientError(partialData, [notFound(1)]));
+      mocks.setResponseOnce({ notetaker: { settings: null } });
+
+      const tool = new UserContextTool(mocks.mockApiClient, { deps: { logger: { warn } } });
+      const result = (await tool.execute()) as { content: Record<string, unknown> };
+
+      expect(result.content.message).toBe('User context');
+      expect(result.content.user).toEqual({ id: '123', name: 'John Doe', title: 'Product Manager' });
+      expect(result.content.relevantPeople).toEqual([{ id: '200', name: 'Alice Smith' }]);
+      expect(result.content.relevantDocs).toHaveLength(2);
+      expect(warn).toHaveBeenCalledWith(
+        { errorCount: 1, paths: ['intelligence.relevant_people'] },
+        expect.stringContaining('partial data'),
+      );
+    });
+
+    it('keeps the context and drops unresolved docs, logging each path once', async () => {
+      const warn = jest.fn();
+      const data: GetUserContextQuery = {
+        ...partialData,
+        intelligence: {
+          ...partialData.intelligence,
+          relevant_docs: [
+            { id: '300', object_id: '3001', document: { name: 'Product Spec' } },
+            { id: '301', object_id: '3011', document: null },
+            { id: '302', object_id: '3021', document: null },
+          ],
+        },
+      };
+      mocks.getMockRequest().mockRejectedValueOnce(clientError(data, [notFound(1), docNotFound(1), docNotFound(2)]));
+      mocks.setResponseOnce({ notetaker: { settings: null } });
+
+      const tool = new UserContextTool(mocks.mockApiClient, { deps: { logger: { warn } } });
+      const result = (await tool.execute()) as { content: Record<string, unknown> };
+
+      expect(result.content.relevantDocs).toEqual([{ id: '300', name: 'Product Spec', objectId: '3001' }]);
+      expect(result.content.relevantPeople).toEqual([{ id: '200', name: 'Alice Smith' }]);
+      expect(warn).toHaveBeenCalledWith(
+        { errorCount: 3, paths: ['intelligence.relevant_people', 'intelligence.relevant_docs'] },
+        expect.stringContaining('partial data'),
+      );
+    });
+
+    it('still fails when an error under intelligence is not a NOT_FOUND', async () => {
+      mocks
+        .getMockRequest()
+        .mockRejectedValueOnce(
+          clientError(partialData, [
+            notFound(1),
+            { message: 'Timeout', path: ['intelligence', 'relevant_docs'], extensions: { code: 'TIMEOUT' } },
+          ]),
+        );
+
+      const result = await callToolByNameRawAsync('get_user_context', {});
+
+      expect(result.content[0].text).toBe('Failed to execute tool get_user_context: User not found');
+    });
+
+    it('still fails when an error has no code', async () => {
+      mocks
+        .getMockRequest()
+        .mockRejectedValueOnce(
+          clientError(partialData, [
+            { message: 'User not found', path: ['intelligence', 'relevant_people', 1, 'user'] },
+          ]),
+        );
+
+      const result = await callToolByNameRawAsync('get_user_context', {});
+
+      expect(result.content[0].text).toBe('Failed to execute tool get_user_context: User not found');
+    });
+
+    it('still fails when an error is outside intelligence', async () => {
+      mocks
+        .getMockRequest()
+        .mockRejectedValueOnce(
+          clientError(partialData, [
+            notFound(1),
+            { message: 'Not found', path: ['favorites'], extensions: { code: 'NOT_FOUND' } },
+          ]),
+        );
+
+      const result = await callToolByNameRawAsync('get_user_context', {});
+
+      expect(result.content[0].text).toBe('Failed to execute tool get_user_context: User not found');
+    });
+
+    it('still fails when there is no user in the partial data', async () => {
+      mocks.getMockRequest().mockRejectedValueOnce(clientError({ ...partialData, me: null }, [notFound(1)]));
+
+      const result = await callToolByNameRawAsync('get_user_context', {});
+
+      expect(result.content[0].text).toBe('Failed to execute tool get_user_context: User not found');
+    });
+  });
+
   describe('notetaker block', () => {
     const userOnlyResponse: GetUserContextQuery = {
       me: {
