@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.80.0
+
+### `get_user_context` includes the user's Notetaker setup
+
+- Adds an optional `notetaker` block: `status`, `has_access`, `reason` (why the user has no access), `calendar_connected`, `setup_url` (link to set up Notetaker when no calendar is connected) and `auto_join` (with admin locks), from `notetaker { settings }` at API version `2027-01`.
+- Fetched in a separate call with a 1.5s timeout, in parallel with favorites. On a timeout, an error, or `null` (feature off for the account), the block is left out and the rest of the context is unchanged.
+- The block includes `instructions`: what the agent should do next for the user's current status (for example, connecting a calendar with `show_connect_integration`, or asking which meetings to auto-join). The Notetaker service writes it, so the wording changes without a toolkit release. It is `null` when nothing needs doing. The tool description only points agents to it.
+- This takes effect once `notetaker.settings` is deployed (DaPulse/monday-meetings#740).
+
 ## 5.79.1
 
 ### Name filter guidelines document `any_of`, `not_any_of` and `starts_with`

@@ -1,6 +1,7 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../test-utils/mock-api-client';
 import { UserContextTool } from './user-context-tool';
+import { getNotetakerStatusQuery } from './user-context-notetaker';
 import { GraphqlMondayObject, GetFavoriteDetailsQuery } from 'src/monday-graphql/generated/graphql/graphql';
 import { GetUserContextQuery } from 'src/monday-graphql/generated/graphql.dev/graphql';
 
@@ -103,7 +104,8 @@ describe('UserContextTool', () => {
     const parsed = parseToolResult(result);
     expect(parsed).toEqual(expectedOutput);
 
-    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
+    // getUserContext, getFavoriteDetails, getNotetakerStatus (unmocked here, so the notetaker block is omitted)
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(3);
     expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
       1,
       expect.stringContaining('getUserContext'),
@@ -153,7 +155,8 @@ describe('UserContextTool', () => {
 
     const parsed = parseToolResult(result);
     expect(parsed).toEqual(expectedOutput);
-    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    // getUserContext, getNotetakerStatus
+    expect(mocks.getMockRequest()).toHaveBeenCalledTimes(2);
   });
 
   it('should filter out null items from details response', async () => {
@@ -229,5 +232,105 @@ describe('UserContextTool', () => {
     mocks.setError('Unauthorized');
     const result = await callToolByNameRawAsync('get_user_context', {});
     expect(result.content[0].text).toBe('Failed to execute tool get_user_context: Unauthorized');
+  });
+
+  describe('notetaker block', () => {
+    const userOnlyResponse: GetUserContextQuery = {
+      me: {
+        id: '123',
+        name: 'John Doe',
+        title: 'Dev',
+        account: { tier: 'pro', active_members_count: 5, is_during_trial: false, products: [] },
+      },
+      favorites: [],
+      intelligence: null,
+    };
+
+    const notetakerSettings = {
+      status: 'AUTO_JOIN_OFF',
+      has_access: true,
+      reason: null,
+      calendar_connected: true,
+      setup_url: null,
+      instructions: 'Ask the user which meetings Notetaker should join.',
+      auto_join: { self_hosted: 'OFF', invited: 'OFF', locked: { self_hosted: false, invited: true } },
+    };
+
+    it('includes the notetaker status when available', async () => {
+      mocks.setResponseOnce(userOnlyResponse);
+      mocks.setResponseOnce({ notetaker: { settings: notetakerSettings } });
+
+      const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
+
+      expect(parsed.notetaker).toEqual(notetakerSettings);
+      expect(mocks.getMockRequest()).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('getNotetakerStatus'),
+        {},
+        { versionOverride: '2027-01', timeout: 1500 },
+      );
+    });
+
+    it.each([
+      ['NO_ACCESS', false, 'BLOCKED', true, 'Tell the user an account admin blocked Notetaker.'],
+      ['NOT_CONNECTED', true, null, false, 'Call show_connect_integration for googleCalendar and outlookCalendar.'],
+      ['NOT_CONNECTED', true, null, null, 'Ask the user whether they already connected a calendar.'],
+      ['AUTO_JOIN_OFF', true, null, true, 'Ask the user which meetings Notetaker should join.'],
+      ['AUTO_JOIN_LOCKED_OFF', true, null, true, 'Tell the user an account admin locked auto-join off.'],
+      ['ACTIVE', true, null, true, null],
+      ['ACTIVE', false, 'NO_CREDITS', true, 'Tell the user Notetaker is on hold until credits renew.'],
+    ] as const)(
+      'passes through status %s (has_access %s, reason %s, calendar_connected %s) with its instructions',
+      async (status, has_access, reason, calendar_connected, instructions) => {
+        const settings = { ...notetakerSettings, status, has_access, reason, calendar_connected, instructions };
+        mocks.setResponseOnce(userOnlyResponse);
+        mocks.setResponseOnce({ notetaker: { settings } });
+
+        const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
+
+        expect(parsed.notetaker).toEqual(settings);
+        expect(parsed.notetaker.instructions).toBe(instructions);
+      },
+    );
+
+    it('requests the instructions and keeps per-status guidance out of the description', () => {
+      const description = new UserContextTool(mocks.mockApiClient as any).getDescription();
+
+      expect(getNotetakerStatusQuery).toContain('instructions');
+      expect(description).toContain('notetaker.instructions');
+      for (const status of ['NO_ACCESS', 'NOT_CONNECTED', 'AUTO_JOIN_OFF', 'AUTO_JOIN_LOCKED_OFF']) {
+        expect(description).not.toContain(status);
+      }
+      expect(description).not.toContain('show_connect_integration');
+    });
+
+    it('omits the notetaker block when settings are null (feature off for the account)', async () => {
+      mocks.setResponseOnce(userOnlyResponse);
+      mocks.setResponseOnce({ notetaker: { settings: null } });
+
+      const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
+
+      expect(parsed).not.toHaveProperty('notetaker');
+      expect(parsed.user).toEqual({ id: '123', name: 'John Doe', title: 'Dev' });
+    });
+
+    it('omits the notetaker block and keeps the rest when the notetaker call fails or times out', async () => {
+      mocks.setResponseOnce(userOnlyResponse);
+      mocks.getMockRequest().mockRejectedValueOnce(new Error('The operation was aborted due to timeout'));
+
+      const parsed = parseToolResult(await callToolByNameRawAsync('get_user_context', {}));
+
+      expect(parsed).not.toHaveProperty('notetaker');
+      expect(parsed.message).toBe('User context');
+      expect(parsed.user).toEqual({ id: '123', name: 'John Doe', title: 'Dev' });
+    });
+
+    it('does not call notetaker when the user cannot be resolved', async () => {
+      mocks.setResponseOnce({ me: null, favorites: [], intelligence: null });
+
+      await callToolByNameRawAsync('get_user_context', {});
+
+      expect(mocks.getMockRequest()).toHaveBeenCalledTimes(1);
+    });
   });
 });
