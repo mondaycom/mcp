@@ -9,6 +9,13 @@
 - The block includes `instructions`: what the agent should do next for the user's current status (for example, connecting a calendar with `show_connect_integration`, or asking which meetings to auto-join). The Notetaker service writes it, so the wording changes without a toolkit release. It is `null` when nothing needs doing. The tool description only points agents to it.
 - This takes effect once `notetaker.settings` is deployed (DaPulse/monday-meetings#740).
 
+## 5.79.1
+
+### Name filter guidelines document `any_of`, `not_any_of` and `starts_with`
+
+- `get_column_type_info` guidelines for the `name` column listed only `contains_text` and `not_contains_text`. They now also list `any_of` and `not_any_of`, which match an array of whole item names ignoring case, and `starts_with`.
+- Several exact names fit in one `any_of` rule. A part of a name matches nothing with `any_of`, so it stays a `contains_text` value.
+
 ## 5.79.0
 
 ### `fetch_file_content` reads one file per call
