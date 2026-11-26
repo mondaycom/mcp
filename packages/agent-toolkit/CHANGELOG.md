@@ -1,11 +1,26 @@
 # Changelog
 
-## 5.78.14
+## 5.79.1
 
 ### Name filter guidelines document `any_of`, `not_any_of` and `starts_with`
 
 - `get_column_type_info` guidelines for the `name` column listed only `contains_text` and `not_contains_text`. They now also list `any_of` and `not_any_of`, which match an array of whole item names ignoring case, and `starts_with`.
 - Several exact names fit in one `any_of` rule. A part of a name matches nothing with `any_of`, so it stays a `contains_text` value.
+
+## 5.79.0
+
+### `fetch_file_content` reads one file per call
+
+- When a files column holds several files, `file_name` now picks the file to read (exact name, case-insensitive). A call without `file_name`, or with a name that matches no file, downloads nothing and returns `message` plus `files` with each file's `file_name` and `file_extension`. A column with one file works as before, and `file_name` is still used there only to determine the file type.
+- Before, every call downloaded and extracted every file in the column at once, and paging with `offset` repeated that for the whole column on each page. On a column with dozens of .xlsx files, one call used 25-60 seconds of CPU and over 2 GB of memory.
+- `.xlsx` files are always read with the streaming reader. The `mcp-fetch-file-content-xlsx-streaming` flag and the full-workbook loader are removed.
+
+## 5.78.14
+
+### `create_doc` / `update_doc` schema and description fixes (Docs MCP review findings)
+
+- `create_doc`: `docOwnerIds` is limited to 50 ids. Its description no longer says it bypasses permission checks or mentions `add_subscribers_to_object`, and it states that owners apply to workspace docs only and are ignored for `location="item"`. The item-docs line in the tool description no longer lists `docOwnerIds`.
+- `update_doc`: image `public_url` and video `raw_url` must be `https://` URLs; `http`, `file` and `ftp` are rejected at validation. The `column_id` description points to `get_board_info` instead of the hidden `get_board_schema`.
 
 ## 5.78.13
 

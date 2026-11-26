@@ -4,7 +4,7 @@ import ExcelJS from 'exceljs';
 import mammoth from 'mammoth';
 import { getDocumentProxy, extractText } from 'unpdf';
 import { createMockApiClient } from '../test-utils/mock-api-client';
-import { FETCH_FILE_CONTENT_XLSX_STREAMING_FLAG, FetchFileContentTool } from './fetch-file-content-tool';
+import { FetchFileContentTool } from './fetch-file-content-tool';
 import { extractTextFromExcel } from './excel-text-extractor';
 
 jest.mock('unpdf', () => ({
@@ -529,47 +529,6 @@ describe('FetchFileContentTool', () => {
       });
       expect(file.message).toContain('5000000 characters');
     }, 60_000);
-
-    describe('xlsx streaming flag', () => {
-      // A trailing empty-string formula: the streaming reader drops it, the legacy loader keeps its commas.
-      async function workbookWithTrailingEmptyCell(): Promise<Buffer> {
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet('Flag');
-        sheet.addRow(['a', 'b']);
-        sheet.getCell('D1').value = { formula: '""', result: '' };
-        return toBuffer(workbook);
-      }
-
-      async function runToolWithFlag(xlsxBuf: Buffer, flagChecker?: (flagKey: string) => boolean) {
-        mocks.setResponse(
-          assetsGraphqlResponse([{ public_url: 'https://x/t.xlsx', name: 't.xlsx', file_extension: 'xlsx' }]),
-        );
-        fetchMock.mockResolvedValue(createMockFetchResponse({ body: xlsxBuf, contentLength: String(xlsxBuf.length) }));
-        const tool = new FetchFileContentTool(mocks.mockApiClient, flagChecker && { deps: { flagChecker } });
-        return firstFile((await tool.execute({ item_id: '1', column_id: 'files' })).content);
-      }
-
-      it('uses the streaming reader when the flag is on', async () => {
-        const flagChecker = jest.fn().mockReturnValue(true);
-
-        const file = await runToolWithFlag(await workbookWithTrailingEmptyCell(), flagChecker);
-
-        expect(flagChecker).toHaveBeenCalledWith(FETCH_FILE_CONTENT_XLSX_STREAMING_FLAG);
-        expect(file.text).toBe('=== Sheet: Flag ===\na,b');
-      });
-
-      it('uses the legacy loader when the flag is off', async () => {
-        const file = await runToolWithFlag(await workbookWithTrailingEmptyCell(), () => false);
-
-        expect(file.text).toBe('=== Sheet: Flag ===\na,b,,');
-      });
-
-      it('uses the streaming reader when the host passes no flag checker', async () => {
-        const file = await runToolWithFlag(await workbookWithTrailingEmptyCell());
-
-        expect(file.text).toBe('=== Sheet: Flag ===\na,b');
-      });
-    });
   });
 
   it('treats unknown extensions as utf-8 with content_type unknown', async () => {
@@ -678,24 +637,53 @@ describe('FetchFileContentTool', () => {
     expect(String(firstFile(result.content).message)).toContain('aborted');
   });
 
-  it('processes all files when multiple assets are attached', async () => {
-    mocks.setResponse(
-      assetsGraphqlResponse([
-        { public_url: 'https://x/a.txt', name: 'a.txt', file_extension: 'txt' },
-        { public_url: 'https://x/b.txt', name: 'b.txt', file_extension: 'txt' },
-      ]),
-    );
-    fetchMock
-      .mockResolvedValueOnce(createMockFetchResponse({ body: 'first', contentLength: '5' }))
-      .mockResolvedValueOnce(createMockFetchResponse({ body: 'second', contentLength: '6' }));
+  describe('several files in the column', () => {
+    beforeEach(() => {
+      mocks.setResponse(
+        assetsGraphqlResponse([
+          { public_url: 'https://x/a.txt', name: 'a.txt', file_extension: 'txt' },
+          { public_url: 'https://x/b.txt', name: 'B.txt', file_extension: 'txt' },
+        ]),
+      );
+    });
 
-    const tool = new FetchFileContentTool(mocks.mockApiClient);
-    const result = await tool.execute({ item_id: '1', column_id: 'files' });
+    it('reads only the file named by file_name', async () => {
+      fetchMock.mockResolvedValue(createMockFetchResponse({ body: 'second', contentLength: '6' }));
 
-    const { files } = toolContentObject(result.content);
-    expect(files).toHaveLength(2);
-    expect(files[0]).toMatchObject({ file_name: 'a.txt', text: 'first' });
-    expect(files[1]).toMatchObject({ file_name: 'b.txt', text: 'second' });
+      const tool = new FetchFileContentTool(mocks.mockApiClient);
+      const result = await tool.execute({ item_id: '1', column_id: 'files', file_name: ' b.TXT ' });
+
+      expect(toolContentObject(result.content).files).toEqual([
+        expect.objectContaining({ file_name: 'B.txt', text: 'second' }),
+      ]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith('https://x/b.txt', expect.anything());
+    });
+
+    it('lists the files without downloading any when file_name is missing', async () => {
+      const tool = new FetchFileContentTool(mocks.mockApiClient);
+      const result = await tool.execute({ item_id: '1', column_id: 'files', offset: 50_000 });
+
+      expect(toolContentObject(result.content)).toEqual({
+        message: 'This column holds 2 files. Call again with file_name set to the one to read.',
+        files: [
+          { file_name: 'a.txt', file_extension: '.txt' },
+          { file_name: 'B.txt', file_extension: '.txt' },
+        ],
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('lists the files without downloading any when file_name matches none', async () => {
+      const tool = new FetchFileContentTool(mocks.mockApiClient);
+      const result = await tool.execute({ item_id: '1', column_id: 'files', file_name: 'c.txt' });
+
+      expect(toolContentObject(result.content).message).toBe(
+        'No file named "c.txt" in this column. Call again with file_name set to one of the 2 files listed.',
+      );
+      expect(toolContentObject(result.content).files).toHaveLength(2);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
   });
 
   it('returns failure message when extraction throws', async () => {
