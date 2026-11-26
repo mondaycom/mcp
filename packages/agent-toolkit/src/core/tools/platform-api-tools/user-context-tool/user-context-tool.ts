@@ -6,6 +6,7 @@ import { GetUserContextQuery } from '../../../../monday-graphql/generated/graphq
 import { GetFavoriteDetailsQuery, GraphqlMondayObject } from '../../../../monday-graphql/generated/graphql/graphql';
 import { Favorite, RelevantBoard, RelevantDoc, RelevantPerson } from './user-context-tool.types';
 import { TYPE_TO_QUERY_VAR, TYPE_TO_RESPONSE_KEY } from './user-context-tool.consts';
+import { GraphQLErrorResponse } from '../../../../utils/graphql-error.types';
 import {
   GetNotetakerStatusQuery,
   getNotetakerStatusQuery,
@@ -84,34 +85,28 @@ export class UserContextTool extends BaseMondayApiTool<undefined> {
   }
 
   /**
-   * relevant_people and relevant_docs can point at users or docs the API no longer resolves (deleted, moved). GraphQL then
-   * returns the full data with NOT_FOUND errors under intelligence, and the client throws. Those entries are optional
-   * enrichment, so keep the partial data when every error is a NOT_FOUND under intelligence. Anything else (a timeout,
-   * a permission error, an error outside intelligence) still fails the tool.
+   * intelligence entries (relevant boards, docs, people) can point at items the API no longer resolves (deleted,
+   * moved). GraphQL then returns the full data with NOT_FOUND errors under intelligence, and the client throws. Those
+   * entries are optional enrichment, so keep the partial data when every error is a NOT_FOUND under intelligence.
+   * Anything else (a timeout, a permission error, an error outside intelligence) still fails the tool.
    */
   private async fetchUserContext(): Promise<GetUserContextQuery> {
     try {
       return await this.mondayApi.request<GetUserContextQuery>(getUserContextQuery, {}, { versionOverride: 'dev' });
     } catch (error) {
-      const response = (
-        error as {
-          response?: {
-            data?: GetUserContextQuery;
-            errors?: { path?: unknown[]; extensions?: { code?: unknown } }[];
-          };
-        }
-      )?.response;
+      const response = (error as GraphQLErrorResponse)?.response;
+      const data = response?.data as GetUserContextQuery | undefined;
       const errors = response?.errors ?? [];
       const onlyUnresolvedIntelligence =
         errors.length > 0 && errors.every((e) => e.path?.[0] === 'intelligence' && e.extensions?.code === 'NOT_FOUND');
-      if (!response?.data?.me || !onlyUnresolvedIntelligence) {
+      if (!data?.me || !onlyUnresolvedIntelligence) {
         throw error;
       }
       this.context?.deps?.logger?.warn(
-        { errorCount: errors.length, paths: errors.map((e) => e.path?.slice(0, 2).join('.')) },
+        { errorCount: errors.length, paths: [...new Set(errors.map((e) => e.path?.slice(0, 2).join('.')))] },
         'get_user_context: using partial data, dropped unresolved intelligence entries',
       );
-      return response.data;
+      return data;
     }
   }
 

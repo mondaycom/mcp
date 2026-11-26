@@ -243,6 +243,11 @@ describe('UserContextTool', () => {
       path: ['intelligence', 'relevant_people', index, 'user'],
       extensions: { code: 'NOT_FOUND' },
     });
+    const docNotFound = (index: number): GqlError => ({
+      message: 'Document not found',
+      path: ['intelligence', 'relevant_docs', index, 'document'],
+      extensions: { code: 'NOT_FOUND' },
+    });
 
     const partialData: GetUserContextQuery = {
       ...mockUserContextResponse,
@@ -270,6 +275,33 @@ describe('UserContextTool', () => {
       expect(result.content.relevantDocs).toHaveLength(2);
       expect(warn).toHaveBeenCalledWith(
         { errorCount: 1, paths: ['intelligence.relevant_people'] },
+        expect.stringContaining('partial data'),
+      );
+    });
+
+    it('keeps the context and drops unresolved docs, logging each path once', async () => {
+      const warn = jest.fn();
+      const data: GetUserContextQuery = {
+        ...partialData,
+        intelligence: {
+          ...partialData.intelligence,
+          relevant_docs: [
+            { id: '300', object_id: '3001', document: { name: 'Product Spec' } },
+            { id: '301', object_id: '3011', document: null },
+            { id: '302', object_id: '3021', document: null },
+          ],
+        },
+      };
+      mocks.getMockRequest().mockRejectedValueOnce(clientError(data, [notFound(1), docNotFound(1), docNotFound(2)]));
+      mocks.setResponseOnce({ notetaker: { settings: null } });
+
+      const tool = new UserContextTool(mocks.mockApiClient, { deps: { logger: { warn } } });
+      const result = (await tool.execute()) as { content: Record<string, unknown> };
+
+      expect(result.content.relevantDocs).toEqual([{ id: '300', name: 'Product Spec', objectId: '3001' }]);
+      expect(result.content.relevantPeople).toEqual([{ id: '200', name: 'Alice Smith' }]);
+      expect(warn).toHaveBeenCalledWith(
+        { errorCount: 3, paths: ['intelligence.relevant_people', 'intelligence.relevant_docs'] },
         expect.stringContaining('partial data'),
       );
     });
