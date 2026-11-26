@@ -3,7 +3,9 @@ export const ATP_SERVER_VERSION = '1.0.0';
 
 export const MONDAY_API_BASE_URL = 'https://api.monday.com/v2';
 export const MONDAY_API_NAME = 'monday';
-export const DEFAULT_API_VERSION = '2025-10';
+// Keep equal to API_VERSION in packages/agent-toolkit/src/utils/version.utils.ts
+// (the toolkit package entries do not export it; tests/atp.test.ts asserts they match).
+export const DEFAULT_API_VERSION = '2027-01';
 export const QUERY_DEPTH_LIMIT = 2;
 
 export const getMondaySchemaUrl = (version: string = DEFAULT_API_VERSION): string =>

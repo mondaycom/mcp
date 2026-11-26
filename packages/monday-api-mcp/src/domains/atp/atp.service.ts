@@ -48,7 +48,7 @@ function initAtpServer(createServer: CreateServerFn): AtpServer {
   return createServer({ logger: 'none' });
 }
 
-async function loadMondaySchema(server: AtpServer, token: string, version?: string) {
+export async function loadMondaySchema(server: Pick<AtpServer, 'loadGraphQL'>, token: string, version?: string) {
   const apiVersion = version ?? DEFAULT_API_VERSION;
   await server.loadGraphQL(getMondaySchemaUrl(apiVersion), {
     name: MONDAY_API_NAME,
