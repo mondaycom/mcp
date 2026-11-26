@@ -1,5 +1,11 @@
 # Changelog
 
+## 5.80.2
+
+### `update_form` is marked destructive
+
+- `update_form` now sets `destructiveHint: true`. Its `deactivate` action takes a live form offline and `deleteTag` removes a tag, so clients should ask the user before calling it. The tool's behavior and schema are unchanged.
+
 ## 5.80.1
 
 ### `get_user_context` no longer fails on unresolved relevant people or docs

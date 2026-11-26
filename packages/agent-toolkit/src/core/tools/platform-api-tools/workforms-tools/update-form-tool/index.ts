@@ -9,7 +9,7 @@ export class UpdateFormTool extends BaseMondayApiTool<typeof updateFormToolSchem
   annotations = createMondayApiAnnotations({
     title: 'Update Form',
     readOnlyHint: false,
-    destructiveHint: false,
+    destructiveHint: true,
     idempotentHint: true,
   });
 

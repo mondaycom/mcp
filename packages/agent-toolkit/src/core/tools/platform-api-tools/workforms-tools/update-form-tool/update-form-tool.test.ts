@@ -1,6 +1,7 @@
 import { MondayAgentToolkit } from 'src/mcp/toolkit';
 import { callToolByNameRawAsync, createMockApiClient, parseToolResult } from '../../test-utils/mock-api-client';
 import { updateFormToolSchema, FormActions } from './schema';
+import { UpdateFormTool } from './index';
 import { z, ZodTypeAny } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { BackgroundType, Direction, LayoutType, Alignment, LogoPosition, LogoSize, FontSize } from '../workforms.types';
@@ -1704,6 +1705,16 @@ describe('UpdateFormTool', () => {
 
       expect(parseToolResult(result).message).toContain('Appearance successfully updated');
       expect(mocks.getMockRequest()).toHaveBeenCalled();
+    });
+  });
+
+  describe('Annotations', () => {
+    it('is marked destructive because deactivate and deleteTag remove data', () => {
+      const tool = new UpdateFormTool(mocks.mockApiClient);
+
+      expect(tool.annotations.readOnlyHint).toBe(false);
+      expect(tool.annotations.destructiveHint).toBe(true);
+      expect(tool.annotations.idempotentHint).toBe(true);
     });
   });
 });
