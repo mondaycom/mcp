@@ -3,6 +3,11 @@
 All notable changes to the `monday-crm` Claude plugin are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.4] — 2026-11-27
+
+### Added
+- `plugin.json` and `mcp.json` at the plugin root, following the [Agent Plugins 1.0](https://agent-plugins.org/specification) open standard. Clients that support it (GitHub Copilot CLI, VS Code, Cursor) can load the same skills and the monday MCP server. Claude Code keeps using `.claude-plugin/plugin.json` and `.mcp.json`, unchanged.
+
 ## [0.6.3] — 2026-11-09
 
 ### Changed
